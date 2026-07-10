@@ -13,18 +13,28 @@ class TrackProcessingGraph
 public:
     void configureFromProject(const Project& project);
     void prepare(double sampleRate, int maxBlockSize, int numOutputChannels);
-    void render(juce::AudioBuffer<float>& output, int numSamples) noexcept;
+    void render(juce::AudioBuffer<float>& output,
+                int numSamples,
+                double startBeat,
+                double beatsPerSample) noexcept;
 
     [[nodiscard]] int getTrackCount() const noexcept { return static_cast<int>(tracks.size()); }
 
 private:
     struct TrackProcessor
     {
+        struct SequencedNote
+        {
+            int pitch = 60;
+            double startBeat = 0.0;
+            double endBeat = 1.0;
+            float velocity = 0.8f;
+        };
+
         EntityId id = 0;
         float gain = 1.0f;
         float pan = 0.0f;
-        double frequency = 110.0;
-        double phase = 0.0;
+        std::vector<SequencedNote> notes;
     };
 
     std::vector<TrackProcessor> tracks;

@@ -82,13 +82,15 @@ void testTrackProcessingGraphGainPan()
     auto& track = project.createTrack(aidaw::TrackType::midi, "Diagnostic Tone");
     track.gain = 0.5f;
     track.pan = -1.0f;
+    auto& clip = project.createClip(track.id, "Note", 0.0, 4.0);
+    [[maybe_unused]] auto& note = project.addMidiNote(track.id, clip.id, 48, 0.0, 4.0, 1.0f);
 
     aidaw::TrackProcessingGraph graph;
     graph.configureFromProject(project);
     graph.prepare(44100.0, 256, 2);
 
     juce::AudioBuffer<float> output(2, 256);
-    graph.render(output, output.getNumSamples());
+    graph.render(output, output.getNumSamples(), 0.0, 120.0 / 60.0 / 44100.0);
 
     expect(channelAbsSum(output, 0) > 0.1f, "left channel receives diagnostic tone");
     expect(channelAbsSum(output, 1) < 0.0001f, "right channel is muted by hard-left pan");
