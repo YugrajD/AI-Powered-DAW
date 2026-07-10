@@ -183,6 +183,57 @@ void testTrackProcessingGraphEffects()
 
     expect(channelAbsSum(output, 0) > 0.1f, "effect chain keeps output audible");
 }
+
+juce::File writeTestWav()
+{
+    auto file = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                    .getChildFile("aidaw_audio_clip_test.wav");
+    file.deleteFile();
+
+    juce::WavAudioFormat wavFormat;
+    auto stream = std::unique_ptr<juce::FileOutputStream>(file.createOutputStream());
+    auto writer = std::unique_ptr<juce::AudioFormatWriter>(
+        wavFormat.createWriterFor(stream.get(), 44100.0, 1, 16, {}, 0));
+
+    if (writer == nullptr)
+        return {};
+
+    stream.release();
+
+    juce::AudioBuffer<float> buffer(1, 44100);
+    auto* data = buffer.getWritePointer(0);
+    for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+    {
+        const auto phase = juce::MathConstants<double>::twoPi * 220.0 * static_cast<double>(sample) / 44100.0;
+        data[sample] = static_cast<float>(std::sin(phase) * 0.4);
+    }
+
+    writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
+    return file;
+}
+
+void testTrackProcessingGraphAudioClipRender()
+{
+    auto wavFile = writeTestWav();
+    expect(wavFile.existsAsFile(), "test wav is written");
+
+    aidaw::Project project;
+    auto& track = project.createTrack(aidaw::TrackType::audio, "Audio");
+    track.gain = 0.8f;
+    [[maybe_unused]] auto& clip = project.createAudioClip(track.id, "Imported", wavFile, 0.0, 2.0);
+
+    aidaw::TrackProcessingGraph graph;
+    graph.configureFromProject(project);
+    graph.prepare(44100.0, 512, 2);
+
+    juce::AudioBuffer<float> output(2, 512);
+    graph.render(output, output.getNumSamples(), 0.1, 120.0 / 60.0 / 44100.0);
+
+    expect(channelAbsSum(output, 0) > 0.1f, "audio clip renders non-silent output");
+    expect(channelAbsSum(output, 1) > 0.1f, "mono audio clip is copied to right channel");
+
+    wavFile.deleteFile();
+}
 }
 
 int main()
@@ -193,6 +244,7 @@ int main()
     testTrackProcessingGraphGainPan();
     testTrackProcessingGraphInstrumentModes();
     testTrackProcessingGraphEffects();
+    testTrackProcessingGraphAudioClipRender();
 
     if (failures != 0)
         return 1;
