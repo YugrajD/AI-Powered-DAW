@@ -84,6 +84,11 @@ juce::var clipToVar(const Clip& clip)
     object->setProperty("startBeat", clip.startBeat);
     object->setProperty("lengthBeats", clip.lengthBeats);
     object->setProperty("loopEnabled", clip.loopEnabled);
+    object->setProperty("audioFilePath", clip.audioFilePath);
+    object->setProperty("sourceStartSeconds", clip.sourceStartSeconds);
+    object->setProperty("clipGain", clip.clipGain);
+    object->setProperty("fadeInBeats", clip.fadeInBeats);
+    object->setProperty("fadeOutBeats", clip.fadeOutBeats);
 
     juce::Array<juce::var> notes;
     for (const auto& note : clip.notes)
@@ -205,6 +210,11 @@ Project ProjectSerializer::fromJson(const juce::String& json)
                                                 static_cast<double>(clipValue.getProperty("startBeat", 0.0)),
                                                 static_cast<double>(clipValue.getProperty("lengthBeats", 4.0)));
                 clip.loopEnabled = static_cast<bool>(clipValue.getProperty("loopEnabled", true));
+                clip.audioFilePath = clipValue.getProperty("audioFilePath", "").toString();
+                clip.sourceStartSeconds = static_cast<double>(clipValue.getProperty("sourceStartSeconds", 0.0));
+                clip.clipGain = static_cast<float>(static_cast<double>(clipValue.getProperty("clipGain", 1.0)));
+                clip.fadeInBeats = static_cast<double>(clipValue.getProperty("fadeInBeats", 0.0));
+                clip.fadeOutBeats = static_cast<double>(clipValue.getProperty("fadeOutBeats", 0.0));
 
                 const auto* notes = clipValue.getProperty("notes", juce::var {}).getArray();
                 if (notes == nullptr)

@@ -50,6 +50,11 @@ struct Clip
     double startBeat = 0.0;
     double lengthBeats = 4.0;
     bool loopEnabled = true;
+    juce::String audioFilePath;
+    double sourceStartSeconds = 0.0;
+    float clipGain = 1.0f;
+    double fadeInBeats = 0.0;
+    double fadeOutBeats = 0.0;
     std::vector<MidiNote> notes;
 };
 
@@ -90,6 +95,11 @@ public:
     void setTrackInstrument(EntityId trackId, InstrumentType instrument);
     bool addTrackEffect(EntityId trackId, EffectType effect, float amount);
     [[nodiscard]] Clip& createClip(EntityId trackId, juce::String clipName, double startBeat, double lengthBeats);
+    [[nodiscard]] Clip& createAudioClip(EntityId trackId,
+                                        juce::String clipName,
+                                        juce::File audioFile,
+                                        double startBeat,
+                                        double lengthBeats);
     [[nodiscard]] MidiNote& addMidiNote(EntityId trackId,
                                         EntityId clipId,
                                         int pitch,

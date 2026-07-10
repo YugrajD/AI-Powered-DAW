@@ -34,6 +34,16 @@ aidaw::Project makeProject()
     auto& clip = project.createClip(track.id, "Bass Loop", 8.0, 4.0);
     clip.notes.push_back(aidaw::MidiNote { 36, 0.0, 0.5, 0.9f });
     clip.notes.push_back(aidaw::MidiNote { 43, 1.0, 0.5, 0.8f });
+
+    auto& audioTrack = project.createTrack(aidaw::TrackType::audio, "Loop");
+    auto& audioClip = project.createAudioClip(audioTrack.id,
+                                              "Break",
+                                              juce::File("C:/Samples/break.wav"),
+                                              0.0,
+                                              8.0);
+    audioClip.clipGain = 0.65f;
+    audioClip.fadeInBeats = 0.25;
+    audioClip.fadeOutBeats = 0.5;
     return project;
 }
 
@@ -42,7 +52,7 @@ void testProjectModel()
     auto project = makeProject();
 
     expect(project.getName() == "Serialization Test", "project name is stored");
-    expect(project.getTracks().size() == 1, "track is created");
+    expect(project.getTracks().size() == 2, "tracks are created");
     expect(project.getTracks().front().clips.size() == 1, "clip is created");
     expect(project.findTrack(project.getTracks().front().id) != nullptr, "track lookup works");
     expect(project.getTracks().front().clips.front().notes.size() == 2, "notes are stored");
@@ -68,6 +78,12 @@ void testProjectSerializationRoundTrip()
     expect(restoredTrack.clips.size() == 1, "clip count round-trips");
     expect(restoredTrack.clips.front().notes.size() == 2, "note count round-trips");
     expect(restoredTrack.clips.front().notes.front().pitch == 36, "note pitch round-trips");
+
+    const auto& restoredAudioTrack = restored.getTracks().back();
+    expect(restoredAudioTrack.type == aidaw::TrackType::audio, "audio track type round-trips");
+    expect(restoredAudioTrack.clips.front().audioFilePath.endsWith("break.wav"), "audio file path round-trips");
+    expect(restoredAudioTrack.clips.front().clipGain == 0.65f, "audio clip gain round-trips");
+    expect(restoredAudioTrack.clips.front().fadeOutBeats == 0.5, "audio clip fade round-trips");
 }
 
 void testMidiClipEditingHelpers()

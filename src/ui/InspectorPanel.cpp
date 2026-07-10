@@ -89,6 +89,9 @@ void InspectorPanel::paint(juce::Graphics& graphics)
     drawField(graphics, bounds, "Start", juce::String(clip->startBeat, 2) + " beats");
     drawField(graphics, bounds, "Length", juce::String(clip->lengthBeats, 2) + " beats");
     drawField(graphics, bounds, "Loop", clip->loopEnabled ? "On" : "Off");
+    drawField(graphics, bounds, "Gain", juce::String(clip->clipGain, 2));
+    if (clip->audioFilePath.isNotEmpty())
+        drawField(graphics, bounds, "Audio", juce::File(clip->audioFilePath).getFileName());
     drawField(graphics, bounds, "Notes", juce::String(clip->notes.size()));
 }
 

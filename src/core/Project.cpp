@@ -50,6 +50,22 @@ Clip& Project::createClip(EntityId trackId, juce::String clipName, double startB
     return clip;
 }
 
+Clip& Project::createAudioClip(EntityId trackId,
+                               juce::String clipName,
+                               juce::File audioFile,
+                               double startBeat,
+                               double lengthBeats)
+{
+    auto& clip = createClip(trackId, std::move(clipName), startBeat, lengthBeats);
+    clip.loopEnabled = false;
+    clip.audioFilePath = audioFile.getFullPathName();
+    clip.clipGain = 1.0f;
+    clip.sourceStartSeconds = 0.0;
+    clip.fadeInBeats = 0.05;
+    clip.fadeOutBeats = 0.05;
+    return clip;
+}
+
 MidiNote& Project::addMidiNote(EntityId trackId,
                                EntityId clipId,
                                int pitch,
