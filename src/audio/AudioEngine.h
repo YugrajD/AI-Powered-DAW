@@ -2,6 +2,7 @@
 
 #include "../core/DiagnosticLog.h"
 #include "../core/Project.h"
+#include "TrackProcessingGraph.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
 
@@ -12,7 +13,7 @@ namespace aidaw
 class AudioEngine final : private juce::AudioIODeviceCallback
 {
 public:
-    explicit AudioEngine(DiagnosticLog& log);
+    AudioEngine(Project& project, DiagnosticLog& log);
     ~AudioEngine() override;
 
     bool initialise();
@@ -43,7 +44,9 @@ private:
                                           const juce::AudioIODeviceCallbackContext& context) override;
 
     DiagnosticLog& log;
+    Project& project;
     juce::AudioDeviceManager deviceManager;
+    TrackProcessingGraph trackGraph;
     std::atomic<double> sampleRate { 0.0 };
     std::atomic<double> tempoBpm { 120.0 };
     std::atomic<double> positionBeats { 0.0 };

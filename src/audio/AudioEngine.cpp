@@ -2,8 +2,9 @@
 
 namespace aidaw
 {
-AudioEngine::AudioEngine(DiagnosticLog& diagnosticLog)
-    : log(diagnosticLog)
+AudioEngine::AudioEngine(Project& projectToRender, DiagnosticLog& diagnosticLog)
+    : log(diagnosticLog),
+      project(projectToRender)
 {
 }
 
@@ -14,6 +15,8 @@ AudioEngine::~AudioEngine()
 
 bool AudioEngine::initialise()
 {
+    trackGraph.configureFromProject(project);
+
     const auto result = deviceManager.initialiseWithDefaultDevices(0, 2);
     if (result.isNotEmpty())
     {
@@ -22,7 +25,9 @@ bool AudioEngine::initialise()
     }
 
     deviceManager.addAudioCallback(this);
-    log.info("Audio device manager initialized");
+    log.info("Audio device manager initialized with "
+             + juce::String(trackGraph.getTrackCount())
+             + " track processor(s)");
     return true;
 }
 
@@ -69,6 +74,7 @@ void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
 
     sampleRate.store(device->getCurrentSampleRate());
     blockSize.store(device->getCurrentBufferSizeSamples());
+    trackGraph.prepare(sampleRate.load(), blockSize.load(), device->getActiveOutputChannels().countNumberOfSetBits());
     deviceOpen.store(true);
 }
 
@@ -90,6 +96,9 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
     for (int channel = 0; channel < numOutputChannels; ++channel)
         if (auto* output = outputChannelData[channel])
             juce::FloatVectorOperations::clear(output, numSamples);
+
+    juce::AudioBuffer<float> outputBuffer(outputChannelData, numOutputChannels, numSamples);
+    trackGraph.render(outputBuffer, numSamples);
 
     const auto currentSampleRate = sampleRate.load();
     const auto currentlyPlaying = playing.load();

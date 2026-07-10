@@ -3,7 +3,7 @@
 #include "../core/ProjectSerializer.h"
 
 MainComponent::MainComponent()
-    : audioEngine(log)
+    : audioEngine(project, log)
 {
     auto& drums = project.createTrack(aidaw::TrackType::midi, "Drums");
     [[maybe_unused]] auto& starterClip = project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
