@@ -1,0 +1,14 @@
+build/
+cmake-build-*/
+out/
+.vs/
+.vscode/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+*.log
+*.tmp
+*.wav
+*.aiff
+*.aidaw
