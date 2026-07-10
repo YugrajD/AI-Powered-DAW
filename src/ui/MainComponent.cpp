@@ -57,6 +57,14 @@ MainComponent::MainComponent()
 
     addAndMakeVisible(arrangementView);
     pianoRollView.setClip(demoTrackId, demoClipId);
+    pianoRollView.onEdited = [this]
+    {
+        log.info("Added MIDI note from piano roll");
+        audioEngine.refreshProjectGraph();
+        arrangementView.repaint();
+        inspectorPanel.repaint();
+        refreshDiagnostics();
+    };
     addAndMakeVisible(pianoRollView);
     inspectorPanel.setSelection(demoTrackId, demoClipId);
     addAndMakeVisible(inspectorPanel);

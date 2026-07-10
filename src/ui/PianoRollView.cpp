@@ -106,7 +106,44 @@ void PianoRollView::paint(juce::Graphics& graphics)
     }
 }
 
+void PianoRollView::mouseDown(const juce::MouseEvent& event)
+{
+    if (event.x < keyboardWidth || selectedClip() == nullptr)
+        return;
+
+    const auto pitch = pitchFromY(event.y);
+    const auto beat = beatFromX(event.x);
+    [[maybe_unused]] auto& note = project.addMidiNote(selectedTrackId,
+                                                      selectedClipId,
+                                                      pitch,
+                                                      beat,
+                                                      0.25,
+                                                      0.85f);
+
+    repaint();
+
+    if (onEdited)
+        onEdited();
+}
+
 const aidaw::Clip* PianoRollView::selectedClip() const
 {
     return project.findClip(selectedTrackId, selectedClipId);
+}
+
+int PianoRollView::pitchFromY(int y) const noexcept
+{
+    const auto roll = getLocalBounds().withTrimmedLeft(keyboardWidth);
+    const auto pitchCount = (maxPitch - minPitch) + 1;
+    const auto rowHeight = static_cast<double>(juce::jmax(1, roll.getHeight())) / static_cast<double>(pitchCount);
+    const auto pitchIndex = juce::jlimit(0, pitchCount - 1, static_cast<int>(std::floor(static_cast<double>(y - roll.getY()) / rowHeight)));
+    return maxPitch - pitchIndex;
+}
+
+double PianoRollView::beatFromX(int x) const noexcept
+{
+    const auto rollX = getLocalBounds().withTrimmedLeft(keyboardWidth).getX();
+    const auto rawBeat = static_cast<double>(x - rollX) / pixelsPerBeat;
+    const auto quantizedBeat = std::round(rawBeat / 0.25) * 0.25;
+    return juce::jmax(0.0, quantizedBeat);
 }
