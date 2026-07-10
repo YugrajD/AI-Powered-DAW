@@ -25,3 +25,10 @@ behavior.
 The core UI milestone introduces a DAW-style shell with an arrangement
 timeline, track headers, clip blocks, piano roll note display/editing,
 transport bar, inspector panel, and diagnostics area.
+
+## Stage 4
+
+The built-in instruments/effects milestone adds explicit track device state,
+three internal instruments (sine, subtractive, and drum synth), built-in
+low-pass, saturation, and delay effects, device serialization, inspector
+display, device controls, and render-path tests.
