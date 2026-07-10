@@ -65,6 +65,28 @@ void testProjectSerializationRoundTrip()
     expect(restoredTrack.clips.front().notes.front().pitch == 36, "note pitch round-trips");
 }
 
+void testMidiClipEditingHelpers()
+{
+    aidaw::Project project;
+    auto& track = project.createTrack(aidaw::TrackType::midi, "Lead");
+    auto& clip = project.createClip(track.id, "Phrase", 0.0, 4.0);
+    [[maybe_unused]] auto& note = project.addMidiNote(track.id, clip.id, 60, 0.13, 0.5, 0.7f);
+
+    expect(project.findClip(track.id, clip.id) != nullptr, "clip lookup works");
+    expect(project.quantizeClip(track.id, clip.id, 0.25), "clip quantize succeeds");
+    expect(clip.notes.front().startBeat == 0.25, "note start quantizes to grid");
+
+    expect(project.transposeClip(track.id, clip.id, 12), "clip transpose succeeds");
+    expect(clip.notes.front().pitch == 72, "note pitch transposes");
+
+    const auto originalClipId = clip.id;
+    const auto expectedNoteCount = clip.notes.size();
+    auto& duplicate = project.duplicateClip(track.id, clip.id, 4.0);
+    expect(duplicate.id != originalClipId, "duplicate receives new id");
+    expect(duplicate.startBeat == 4.0, "duplicate uses requested start beat");
+    expect(duplicate.notes.size() == expectedNoteCount, "duplicate copies notes");
+}
+
 float channelAbsSum(const juce::AudioBuffer<float>& buffer, int channel)
 {
     float sum = 0.0f;
@@ -101,6 +123,7 @@ int main()
 {
     testProjectModel();
     testProjectSerializationRoundTrip();
+    testMidiClipEditingHelpers();
     testTrackProcessingGraphGainPan();
 
     if (failures != 0)
