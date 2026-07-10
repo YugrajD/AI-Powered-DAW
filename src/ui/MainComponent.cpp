@@ -155,6 +155,43 @@ MainComponent::MainComponent()
     };
     addAndMakeVisible(addDelayButton);
 
+    importAudioButton.onClick = [this]
+    {
+        audioFileChooser = std::make_unique<juce::FileChooser>(
+            "Import audio",
+            juce::File {},
+            "*.wav;*.aiff;*.aif");
+
+        audioFileChooser->launchAsync(juce::FileBrowserComponent::openMode
+                                          | juce::FileBrowserComponent::canSelectFiles,
+                                      [this](const juce::FileChooser& chooser)
+                                      {
+                                          const auto file = chooser.getResult();
+                                          if (! file.existsAsFile())
+                                              return;
+
+                                          if (auto* audioTrack = project.findTrack(audioTrackId); audioTrack == nullptr)
+                                          {
+                                              auto& createdTrack = project.createTrack(aidaw::TrackType::audio, "Audio");
+                                              createdTrack.gain = 0.8f;
+                                              audioTrackId = createdTrack.id;
+                                          }
+
+                                          auto& clip = project.createAudioClip(audioTrackId,
+                                                                               file.getFileNameWithoutExtension(),
+                                                                               file,
+                                                                               8.0,
+                                                                               8.0);
+                                          log.info("Imported audio clip: " + file.getFileName());
+                                          audioEngine.refreshProjectGraph();
+                                          arrangementView.repaint();
+                                          inspectorPanel.setSelection(audioTrackId, clip.id);
+                                          inspectorPanel.repaint();
+                                          refreshDiagnostics();
+                                      });
+    };
+    addAndMakeVisible(importAudioButton);
+
     diagnosticsEditor.setMultiLine(true);
     diagnosticsEditor.setReadOnly(true);
     diagnosticsEditor.setScrollbarsShown(true);
@@ -214,6 +251,8 @@ void MainComponent::resized()
     addSaturationButton.setBounds(editBounds.removeFromLeft(86));
     editBounds.removeFromLeft(8);
     addDelayButton.setBounds(editBounds.removeFromLeft(78));
+    editBounds.removeFromLeft(12);
+    importAudioButton.setBounds(editBounds.removeFromLeft(112));
 
     bounds.removeFromTop(16);
     auto workspace = bounds.removeFromTop(496);

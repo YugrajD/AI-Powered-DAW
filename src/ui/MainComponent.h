@@ -31,6 +31,7 @@ private:
     aidaw::AudioEngine audioEngine;
     aidaw::EntityId demoTrackId = 0;
     aidaw::EntityId demoClipId = 0;
+    aidaw::EntityId audioTrackId = 0;
     juce::Label titleLabel;
     juce::Label statusLabel;
     ArrangementView arrangementView { project };
@@ -45,5 +46,7 @@ private:
     juce::TextButton addLowPassButton { "Low-pass" };
     juce::TextButton addSaturationButton { "Saturate" };
     juce::TextButton addDelayButton { "Delay" };
+    juce::TextButton importAudioButton { "Import Audio" };
     juce::TextEditor diagnosticsEditor;
+    std::unique_ptr<juce::FileChooser> audioFileChooser;
 };

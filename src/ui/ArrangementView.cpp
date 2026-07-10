@@ -1,5 +1,7 @@
 #include "ArrangementView.h"
 
+#include <juce_audio_formats/juce_audio_formats.h>
+
 namespace
 {
 juce::Colour panelColour { 0xff1d222b };
@@ -8,6 +10,47 @@ juce::Colour gridColour { 0xff343b48 };
 juce::Colour strongGridColour { 0xff495263 };
 juce::Colour clipColour { 0xff48b6a3 };
 juce::Colour clipBorderColour { 0xff9de3d7 };
+juce::Colour audioClipColour { 0xff6f8ee8 };
+juce::Colour audioWaveformColour { 0xffd7e0ff };
+
+void drawAudioPreview(juce::Graphics& graphics, const aidaw::Clip& clip, juce::Rectangle<int> clipRect)
+{
+    juce::AudioFormatManager formatManager;
+    formatManager.registerBasicFormats();
+
+    auto reader = std::unique_ptr<juce::AudioFormatReader>(
+        formatManager.createReaderFor(juce::File(clip.audioFilePath)));
+
+    if (reader == nullptr || reader->lengthInSamples <= 0)
+        return;
+
+    const auto samplesToRead = static_cast<int>(
+        juce::jmin<juce::int64>(reader->lengthInSamples,
+                                static_cast<juce::int64>(reader->sampleRate * 20.0)));
+    juce::AudioBuffer<float> previewBuffer(static_cast<int>(reader->numChannels), samplesToRead);
+    reader->read(&previewBuffer, 0, samplesToRead, 0, true, true);
+
+    auto waveformBounds = clipRect.reduced(6, 10);
+    const auto centreY = static_cast<float>(waveformBounds.getCentreY());
+    const auto halfHeight = static_cast<float>(waveformBounds.getHeight()) * 0.45f;
+    const auto columns = juce::jmax(1, waveformBounds.getWidth());
+
+    graphics.setColour(audioWaveformColour.withAlpha(0.8f));
+    for (int x = 0; x < columns; ++x)
+    {
+        const auto start = juce::jlimit(0, samplesToRead - 1, (x * samplesToRead) / columns);
+        const auto end = juce::jlimit(start + 1, samplesToRead, ((x + 1) * samplesToRead) / columns);
+        float peak = 0.0f;
+
+        for (int channel = 0; channel < previewBuffer.getNumChannels(); ++channel)
+            for (int sample = start; sample < end; ++sample)
+                peak = juce::jmax(peak, std::abs(previewBuffer.getSample(channel, sample)));
+
+        const auto lineHeight = juce::jmax(1.0f, peak * halfHeight);
+        const auto drawX = waveformBounds.getX() + x;
+        graphics.drawVerticalLine(drawX, centreY - lineHeight, centreY + lineHeight);
+    }
+}
 }
 
 ArrangementView::ArrangementView(aidaw::Project& projectToDisplay)
@@ -79,12 +122,16 @@ void ArrangementView::paint(juce::Graphics& graphics)
             const auto clipW = juce::jmax(28, static_cast<int>(std::round(clip.lengthBeats * pixelsPerBeat)));
             auto clipRect = juce::Rectangle<int> { clipX, y + 12, clipW, trackHeight - 24 };
 
-            graphics.setColour(clipColour);
+            const auto isAudioClip = clip.audioFilePath.isNotEmpty();
+            graphics.setColour(isAudioClip ? audioClipColour : clipColour);
             graphics.fillRoundedRectangle(clipRect.toFloat(), 6.0f);
             graphics.setColour(clipBorderColour);
             graphics.drawRoundedRectangle(clipRect.toFloat(), 6.0f, 1.0f);
 
-            graphics.setColour(juce::Colour { 0xff0e2724 });
+            if (isAudioClip)
+                drawAudioPreview(graphics, clip, clipRect);
+
+            graphics.setColour(isAudioClip ? juce::Colour { 0xff101936 } : juce::Colour { 0xff0e2724 });
             graphics.setFont(juce::FontOptions { 13.0f, juce::Font::bold });
             graphics.drawText(clip.name, clipRect.reduced(8, 4), juce::Justification::centredLeft);
         }
