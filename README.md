@@ -19,3 +19,9 @@ The MIDI sequencer milestone adds clip editing helpers, MIDI note scheduling
 through the audio graph, a simple built-in sine synth voice, demo pattern
 playback, quantize/transpose/duplicate controls, and tests for sequencing
 behavior.
+
+## Stage 3
+
+The core UI milestone introduces a DAW-style shell with an arrangement
+timeline, track headers, clip blocks, piano roll note display/editing,
+transport bar, inspector panel, and diagnostics area.
