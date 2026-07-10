@@ -14,6 +14,27 @@ enum class TrackType
     midi
 };
 
+enum class InstrumentType
+{
+    sineSynth,
+    subtractiveSynth,
+    drumSynth
+};
+
+enum class EffectType
+{
+    lowPass,
+    delay,
+    saturation
+};
+
+struct EffectSlot
+{
+    EffectType type = EffectType::lowPass;
+    bool enabled = true;
+    float amount = 0.5f;
+};
+
 struct MidiNote
 {
     int pitch = 60;
@@ -37,12 +58,14 @@ struct Track
     EntityId id = 0;
     juce::String name;
     TrackType type = TrackType::midi;
+    InstrumentType instrument = InstrumentType::sineSynth;
     bool muted = false;
     bool soloed = false;
     bool armed = false;
     float gain = 1.0f;
     float pan = 0.0f;
     std::vector<Clip> clips;
+    std::vector<EffectSlot> effects;
 };
 
 struct Transport
@@ -64,6 +87,8 @@ public:
     [[nodiscard]] const Transport& getTransport() const noexcept { return transport; }
 
     [[nodiscard]] Track& createTrack(TrackType type, juce::String trackName);
+    void setTrackInstrument(EntityId trackId, InstrumentType instrument);
+    bool addTrackEffect(EntityId trackId, EffectType effect, float amount);
     [[nodiscard]] Clip& createClip(EntityId trackId, juce::String clipName, double startBeat, double lengthBeats);
     [[nodiscard]] MidiNote& addMidiNote(EntityId trackId,
                                         EntityId clipId,

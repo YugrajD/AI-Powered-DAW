@@ -21,6 +21,22 @@ Track& Project::createTrack(TrackType type, juce::String trackName)
     return track;
 }
 
+void Project::setTrackInstrument(EntityId trackId, InstrumentType instrument)
+{
+    if (auto* track = findTrack(trackId))
+        track->instrument = instrument;
+}
+
+bool Project::addTrackEffect(EntityId trackId, EffectType effect, float amount)
+{
+    auto* track = findTrack(trackId);
+    if (track == nullptr)
+        return false;
+
+    track->effects.push_back(EffectSlot { effect, true, juce::jlimit(0.0f, 1.0f, amount) });
+    return true;
+}
+
 Clip& Project::createClip(EntityId trackId, juce::String clipName, double startBeat, double lengthBeats)
 {
     auto* track = findTrack(trackId);

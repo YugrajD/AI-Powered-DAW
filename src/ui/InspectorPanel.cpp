@@ -18,6 +18,21 @@ void drawField(juce::Graphics& graphics, juce::Rectangle<int>& bounds, const juc
     graphics.setFont(juce::FontOptions { 13.0f, juce::Font::bold });
     graphics.drawText(value, row, juce::Justification::centredLeft);
 }
+
+juce::String instrumentName(aidaw::InstrumentType instrument)
+{
+    switch (instrument)
+    {
+        case aidaw::InstrumentType::sineSynth:
+            return "Sine Synth";
+        case aidaw::InstrumentType::subtractiveSynth:
+            return "Subtractive Synth";
+        case aidaw::InstrumentType::drumSynth:
+            return "Drum Synth";
+    }
+
+    return "Sine Synth";
+}
 }
 
 InspectorPanel::InspectorPanel(aidaw::Project& projectToInspect)
@@ -56,6 +71,8 @@ void InspectorPanel::paint(juce::Graphics& graphics)
 
     drawField(graphics, bounds, "Track", track->name);
     drawField(graphics, bounds, "Type", track->type == aidaw::TrackType::midi ? "MIDI" : "Audio");
+    drawField(graphics, bounds, "Instrument", instrumentName(track->instrument));
+    drawField(graphics, bounds, "Effects", juce::String(track->effects.size()));
     drawField(graphics, bounds, "Gain", juce::String(track->gain, 2));
     drawField(graphics, bounds, "Pan", juce::String(track->pan, 2));
     drawField(graphics, bounds, "Clips", juce::String(track->clips.size()));

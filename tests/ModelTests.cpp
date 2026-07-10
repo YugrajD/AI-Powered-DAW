@@ -26,8 +26,10 @@ aidaw::Project makeProject()
     project.getTransport().positionBeats = 16.0;
 
     auto& track = project.createTrack(aidaw::TrackType::midi, "Bass");
+    track.instrument = aidaw::InstrumentType::subtractiveSynth;
     track.gain = 0.75f;
     track.pan = -0.2f;
+    project.addTrackEffect(track.id, aidaw::EffectType::saturation, 0.4f);
 
     auto& clip = project.createClip(track.id, "Bass Loop", 8.0, 4.0);
     clip.notes.push_back(aidaw::MidiNote { 36, 0.0, 0.5, 0.9f });
@@ -60,6 +62,9 @@ void testProjectSerializationRoundTrip()
     const auto& restoredTrack = restored.getTracks().front();
     expect(restoredTrack.name == "Bass", "track name round-trips");
     expect(restoredTrack.type == aidaw::TrackType::midi, "track type round-trips");
+    expect(restoredTrack.instrument == aidaw::InstrumentType::subtractiveSynth, "instrument round-trips");
+    expect(restoredTrack.effects.size() == 1, "effect count round-trips");
+    expect(restoredTrack.effects.front().type == aidaw::EffectType::saturation, "effect type round-trips");
     expect(restoredTrack.clips.size() == 1, "clip count round-trips");
     expect(restoredTrack.clips.front().notes.size() == 2, "note count round-trips");
     expect(restoredTrack.clips.front().notes.front().pitch == 36, "note pitch round-trips");

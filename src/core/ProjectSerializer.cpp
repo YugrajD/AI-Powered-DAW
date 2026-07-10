@@ -14,6 +14,58 @@ TrackType trackTypeFromString(const juce::String& value)
     return value == "audio" ? TrackType::audio : TrackType::midi;
 }
 
+juce::String instrumentTypeToString(InstrumentType type)
+{
+    switch (type)
+    {
+        case InstrumentType::sineSynth:
+            return "sineSynth";
+        case InstrumentType::subtractiveSynth:
+            return "subtractiveSynth";
+        case InstrumentType::drumSynth:
+            return "drumSynth";
+    }
+
+    return "sineSynth";
+}
+
+InstrumentType instrumentTypeFromString(const juce::String& value)
+{
+    if (value == "subtractiveSynth")
+        return InstrumentType::subtractiveSynth;
+
+    if (value == "drumSynth")
+        return InstrumentType::drumSynth;
+
+    return InstrumentType::sineSynth;
+}
+
+juce::String effectTypeToString(EffectType type)
+{
+    switch (type)
+    {
+        case EffectType::lowPass:
+            return "lowPass";
+        case EffectType::delay:
+            return "delay";
+        case EffectType::saturation:
+            return "saturation";
+    }
+
+    return "lowPass";
+}
+
+EffectType effectTypeFromString(const juce::String& value)
+{
+    if (value == "delay")
+        return EffectType::delay;
+
+    if (value == "saturation")
+        return EffectType::saturation;
+
+    return EffectType::lowPass;
+}
+
 juce::var noteToVar(const MidiNote& note)
 {
     auto object = new juce::DynamicObject();
@@ -47,6 +99,7 @@ juce::var trackToVar(const Track& track)
     object->setProperty("id", track.id);
     object->setProperty("name", track.name);
     object->setProperty("type", trackTypeToString(track.type));
+    object->setProperty("instrument", instrumentTypeToString(track.instrument));
     object->setProperty("muted", track.muted);
     object->setProperty("soloed", track.soloed);
     object->setProperty("armed", track.armed);
@@ -58,6 +111,18 @@ juce::var trackToVar(const Track& track)
         clips.add(clipToVar(clip));
 
     object->setProperty("clips", clips);
+
+    juce::Array<juce::var> effects;
+    for (const auto& effect : track.effects)
+    {
+        auto effectObject = new juce::DynamicObject();
+        effectObject->setProperty("type", effectTypeToString(effect.type));
+        effectObject->setProperty("enabled", effect.enabled);
+        effectObject->setProperty("amount", effect.amount);
+        effects.add(effectObject);
+    }
+
+    object->setProperty("effects", effects);
     return object;
 }
 
@@ -120,6 +185,7 @@ Project ProjectSerializer::fromJson(const juce::String& json)
             trackTypeFromString(trackValue.getProperty("type", "midi").toString()),
             trackValue.getProperty("name", "Track").toString());
 
+        track.instrument = instrumentTypeFromString(trackValue.getProperty("instrument", "sineSynth").toString());
         track.muted = static_cast<bool>(trackValue.getProperty("muted", false));
         track.soloed = static_cast<bool>(trackValue.getProperty("soloed", false));
         track.armed = static_cast<bool>(trackValue.getProperty("armed", false));
@@ -128,22 +194,37 @@ Project ProjectSerializer::fromJson(const juce::String& json)
 
         const auto* clips = trackValue.getProperty("clips", juce::var {}).getArray();
         if (clips == nullptr)
+            clips = nullptr;
+
+        if (clips != nullptr)
+        {
+            for (const auto& clipValue : *clips)
+            {
+                auto& clip = project.createClip(track.id,
+                                                clipValue.getProperty("name", "Clip").toString(),
+                                                static_cast<double>(clipValue.getProperty("startBeat", 0.0)),
+                                                static_cast<double>(clipValue.getProperty("lengthBeats", 4.0)));
+                clip.loopEnabled = static_cast<bool>(clipValue.getProperty("loopEnabled", true));
+
+                const auto* notes = clipValue.getProperty("notes", juce::var {}).getArray();
+                if (notes == nullptr)
+                    continue;
+
+                for (const auto& noteValue : *notes)
+                    clip.notes.push_back(noteFromVar(noteValue));
+            }
+        }
+
+        const auto* effects = trackValue.getProperty("effects", juce::var {}).getArray();
+        if (effects == nullptr)
             continue;
 
-        for (const auto& clipValue : *clips)
+        for (const auto& effectValue : *effects)
         {
-            auto& clip = project.createClip(track.id,
-                                            clipValue.getProperty("name", "Clip").toString(),
-                                            static_cast<double>(clipValue.getProperty("startBeat", 0.0)),
-                                            static_cast<double>(clipValue.getProperty("lengthBeats", 4.0)));
-            clip.loopEnabled = static_cast<bool>(clipValue.getProperty("loopEnabled", true));
-
-            const auto* notes = clipValue.getProperty("notes", juce::var {}).getArray();
-            if (notes == nullptr)
-                continue;
-
-            for (const auto& noteValue : *notes)
-                clip.notes.push_back(noteFromVar(noteValue));
+            track.effects.push_back(EffectSlot {
+                effectTypeFromString(effectValue.getProperty("type", "lowPass").toString()),
+                static_cast<bool>(effectValue.getProperty("enabled", true)),
+                static_cast<float>(static_cast<double>(effectValue.getProperty("amount", 0.5))) });
         }
     }
 
