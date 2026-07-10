@@ -6,6 +6,8 @@ juce_add_gui_app(AIPoweredDAW
 
 target_sources(AIPoweredDAW
     PRIVATE
+        core/DiagnosticLog.cpp
+        core/DiagnosticLog.h
         core/Project.cpp
         core/Project.h
         Main.cpp

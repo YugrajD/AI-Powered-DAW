@@ -4,6 +4,8 @@ MainComponent::MainComponent()
 {
     auto& drums = project.createTrack(aidaw::TrackType::midi, "Drums");
     project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
+    log.info("Created project shell");
+    log.info("Added starter MIDI track and clip");
 
     titleLabel.setText("AI Powered DAW", juce::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centredLeft);
@@ -19,6 +21,16 @@ MainComponent::MainComponent()
     statusLabel.setJustificationType(juce::Justification::centredLeft);
     statusLabel.setFont(juce::FontOptions { 15.0f });
     addAndMakeVisible(statusLabel);
+
+    diagnosticsEditor.setMultiLine(true);
+    diagnosticsEditor.setReadOnly(true);
+    diagnosticsEditor.setScrollbarsShown(true);
+    diagnosticsEditor.setCaretVisible(false);
+    diagnosticsEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff101217 });
+    diagnosticsEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
+    diagnosticsEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffd9dde7 });
+    diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
+    addAndMakeVisible(diagnosticsEditor);
 
     setSize(1200, 760);
 }
@@ -40,4 +52,6 @@ void MainComponent::resized()
     auto bounds = getLocalBounds().reduced(48);
     titleLabel.setBounds(bounds.removeFromTop(40));
     statusLabel.setBounds(bounds.removeFromTop(28));
+    bounds.removeFromTop(16);
+    diagnosticsEditor.setBounds(bounds.removeFromBottom(180));
 }
