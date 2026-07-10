@@ -67,6 +67,16 @@ void AudioEngine::setMetronomeEnabled(bool enabled) noexcept
     metronomeEnabled.store(enabled);
 }
 
+double AudioEngine::getLastCallbackMilliseconds() const noexcept
+{
+    return static_cast<double>(lastCallbackMicros.load()) / 1000.0;
+}
+
+double AudioEngine::getMaxCallbackMilliseconds() const noexcept
+{
+    return static_cast<double>(maxCallbackMicros.load()) / 1000.0;
+}
+
 void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
 {
     if (device == nullptr)
@@ -74,6 +84,10 @@ void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
 
     sampleRate.store(device->getCurrentSampleRate());
     blockSize.store(device->getCurrentBufferSizeSamples());
+    callbackCount.store(0);
+    overrunCount.store(0);
+    lastCallbackMicros.store(0);
+    maxCallbackMicros.store(0);
     trackGraph.prepare(sampleRate.load(), blockSize.load(), device->getActiveOutputChannels().countNumberOfSetBits());
     deviceOpen.store(true);
 }
@@ -93,6 +107,8 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
                                                    int numSamples,
                                                    const juce::AudioIODeviceCallbackContext&)
 {
+    const auto callbackStartTicks = juce::Time::getHighResolutionTicks();
+
     for (int channel = 0; channel < numOutputChannels; ++channel)
         if (auto* output = outputChannelData[channel])
             juce::FloatVectorOperations::clear(output, numSamples);
@@ -103,6 +119,7 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
     if (! currentlyPlaying || currentSampleRate <= 0.0)
     {
         wasPlayingLastBlock = false;
+        recordCallbackTiming(callbackStartTicks, numSamples, currentSampleRate);
         return;
     }
 
@@ -149,5 +166,29 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
     }
 
     positionBeats.store(currentPosition);
+    recordCallbackTiming(callbackStartTicks, numSamples, currentSampleRate);
+}
+
+void AudioEngine::recordCallbackTiming(int64_t startTicks, int numSamples, double currentSampleRate) noexcept
+{
+    const auto elapsedSeconds = juce::Time::highResolutionTicksToSeconds(
+        juce::Time::getHighResolutionTicks() - startTicks);
+    const auto elapsedMicros = static_cast<int64_t>(elapsedSeconds * 1000000.0);
+
+    callbackCount.fetch_add(1);
+    lastCallbackMicros.store(elapsedMicros);
+
+    auto previousMax = maxCallbackMicros.load();
+    while (elapsedMicros > previousMax
+           && ! maxCallbackMicros.compare_exchange_weak(previousMax, elapsedMicros))
+    {
+    }
+
+    if (currentSampleRate > 0.0)
+    {
+        const auto budgetMicros = (static_cast<double>(numSamples) / currentSampleRate) * 1000000.0;
+        if (static_cast<double>(elapsedMicros) > budgetMicros * 0.8)
+            overrunCount.fetch_add(1);
+    }
 }
 }

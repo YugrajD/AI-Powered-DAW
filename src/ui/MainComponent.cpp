@@ -122,6 +122,11 @@ void MainComponent::refreshStatus()
                             + juce::String(audioEngine.getPositionBeats(), 2)
                             + " | "
                             + juce::String(audioEngine.getTempo(), 1)
-                            + " BPM",
+                            + " BPM | cb "
+                            + juce::String(audioEngine.getLastCallbackMilliseconds(), 3)
+                            + "/"
+                            + juce::String(audioEngine.getMaxCallbackMilliseconds(), 3)
+                            + " ms | overruns "
+                            + juce::String(audioEngine.getOverrunCount()),
                         juce::dontSendNotification);
 }

@@ -7,6 +7,7 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 
 #include <atomic>
+#include <cstdint>
 
 namespace aidaw
 {
@@ -32,6 +33,10 @@ public:
     [[nodiscard]] bool isMetronomeEnabled() const noexcept { return metronomeEnabled.load(); }
     [[nodiscard]] double getTempo() const noexcept { return tempoBpm.load(); }
     [[nodiscard]] double getPositionBeats() const noexcept { return positionBeats.load(); }
+    [[nodiscard]] int64_t getCallbackCount() const noexcept { return callbackCount.load(); }
+    [[nodiscard]] int64_t getOverrunCount() const noexcept { return overrunCount.load(); }
+    [[nodiscard]] double getLastCallbackMilliseconds() const noexcept;
+    [[nodiscard]] double getMaxCallbackMilliseconds() const noexcept;
 
 private:
     void audioDeviceAboutToStart(juce::AudioIODevice* device) override;
@@ -42,6 +47,7 @@ private:
                                           int numOutputChannels,
                                           int numSamples,
                                           const juce::AudioIODeviceCallbackContext& context) override;
+    void recordCallbackTiming(int64_t startTicks, int numSamples, double currentSampleRate) noexcept;
 
     DiagnosticLog& log;
     Project& project;
@@ -54,6 +60,10 @@ private:
     std::atomic<bool> deviceOpen { false };
     std::atomic<bool> playing { false };
     std::atomic<bool> metronomeEnabled { true };
+    std::atomic<int64_t> callbackCount { 0 };
+    std::atomic<int64_t> overrunCount { 0 };
+    std::atomic<int64_t> lastCallbackMicros { 0 };
+    std::atomic<int64_t> maxCallbackMicros { 0 };
 
     double nextMetronomeBeat = 0.0;
     double clickPhase = 0.0;
