@@ -28,11 +28,33 @@ bool AudioEngine::initialise()
 
 void AudioEngine::shutdown()
 {
+    playing.store(false);
     deviceManager.removeAudioCallback(this);
     deviceManager.closeAudioDevice();
     deviceOpen.store(false);
     sampleRate.store(0.0);
     blockSize.store(0);
+}
+
+void AudioEngine::play() noexcept
+{
+    playing.store(true);
+}
+
+void AudioEngine::pause() noexcept
+{
+    playing.store(false);
+}
+
+void AudioEngine::stop() noexcept
+{
+    playing.store(false);
+    positionBeats.store(0.0);
+}
+
+void AudioEngine::setTempo(double bpm) noexcept
+{
+    tempoBpm.store(juce::jlimit(40.0, 240.0, bpm));
 }
 
 void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
@@ -62,5 +84,12 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
     for (int channel = 0; channel < numOutputChannels; ++channel)
         if (auto* output = outputChannelData[channel])
             juce::FloatVectorOperations::clear(output, numSamples);
+
+    const auto currentSampleRate = sampleRate.load();
+    if (playing.load() && currentSampleRate > 0.0)
+    {
+        const auto beatsPerSample = tempoBpm.load() / 60.0 / currentSampleRate;
+        positionBeats.store(positionBeats.load() + (beatsPerSample * static_cast<double>(numSamples)));
+    }
 }
 }

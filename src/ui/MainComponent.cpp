@@ -19,16 +19,27 @@ MainComponent::MainComponent()
     titleLabel.setFont(juce::FontOptions { 28.0f, juce::Font::bold });
     addAndMakeVisible(titleLabel);
 
-    statusLabel.setText("Stage 1: "
-                            + project.getName()
-                            + " | "
-                            + juce::String(project.getTracks().size())
-                            + " track | audio "
-                            + (audioEngine.isDeviceOpen() ? "online" : "offline"),
-                        juce::dontSendNotification);
     statusLabel.setJustificationType(juce::Justification::centredLeft);
     statusLabel.setFont(juce::FontOptions { 15.0f });
     addAndMakeVisible(statusLabel);
+
+    playButton.onClick = [this]
+    {
+        audioEngine.play();
+        log.info("Transport started");
+        diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
+        refreshStatus();
+    };
+    addAndMakeVisible(playButton);
+
+    stopButton.onClick = [this]
+    {
+        audioEngine.stop();
+        log.info("Transport stopped");
+        diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
+        refreshStatus();
+    };
+    addAndMakeVisible(stopButton);
 
     diagnosticsEditor.setMultiLine(true);
     diagnosticsEditor.setReadOnly(true);
@@ -40,7 +51,14 @@ MainComponent::MainComponent()
     diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
     addAndMakeVisible(diagnosticsEditor);
 
+    refreshStatus();
+    startTimerHz(20);
     setSize(1200, 760);
+}
+
+MainComponent::~MainComponent()
+{
+    stopTimer();
 }
 
 void MainComponent::paint(juce::Graphics& graphics)
@@ -60,6 +78,36 @@ void MainComponent::resized()
     auto bounds = getLocalBounds().reduced(48);
     titleLabel.setBounds(bounds.removeFromTop(40));
     statusLabel.setBounds(bounds.removeFromTop(28));
+    bounds.removeFromTop(12);
+
+    auto transportBounds = bounds.removeFromTop(36);
+    playButton.setBounds(transportBounds.removeFromLeft(84));
+    transportBounds.removeFromLeft(8);
+    stopButton.setBounds(transportBounds.removeFromLeft(84));
+
     bounds.removeFromTop(16);
     diagnosticsEditor.setBounds(bounds.removeFromBottom(180));
+}
+
+void MainComponent::timerCallback()
+{
+    refreshStatus();
+}
+
+void MainComponent::refreshStatus()
+{
+    statusLabel.setText("Stage 1: "
+                            + project.getName()
+                            + " | "
+                            + juce::String(project.getTracks().size())
+                            + " track | audio "
+                            + (audioEngine.isDeviceOpen() ? "online" : "offline")
+                            + " | "
+                            + (audioEngine.isPlaying() ? "playing" : "stopped")
+                            + " | beat "
+                            + juce::String(audioEngine.getPositionBeats(), 2)
+                            + " | "
+                            + juce::String(audioEngine.getTempo(), 1)
+                            + " BPM",
+                        juce::dontSendNotification);
 }
