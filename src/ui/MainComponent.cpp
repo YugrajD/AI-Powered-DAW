@@ -8,9 +8,17 @@ MainComponent::MainComponent()
     auto& drums = project.createTrack(aidaw::TrackType::midi, "Drums");
     drums.gain = 0.35f;
     drums.pan = -0.15f;
-    [[maybe_unused]] auto& starterClip = project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
+    auto& starterClip = project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
+    demoTrackId = drums.id;
+    demoClipId = starterClip.id;
+    [[maybe_unused]] auto& note1 = project.addMidiNote(demoTrackId, demoClipId, 36, 0.0, 0.25, 1.0f);
+    [[maybe_unused]] auto& note2 = project.addMidiNote(demoTrackId, demoClipId, 36, 1.0, 0.25, 0.9f);
+    [[maybe_unused]] auto& note3 = project.addMidiNote(demoTrackId, demoClipId, 43, 1.5, 0.25, 0.75f);
+    [[maybe_unused]] auto& note4 = project.addMidiNote(demoTrackId, demoClipId, 36, 2.0, 0.25, 1.0f);
+    [[maybe_unused]] auto& note5 = project.addMidiNote(demoTrackId, demoClipId, 46, 2.75, 0.25, 0.8f);
+    [[maybe_unused]] auto& note6 = project.addMidiNote(demoTrackId, demoClipId, 43, 3.5, 0.25, 0.85f);
     log.info("Created project shell");
-    log.info("Added starter MIDI track and clip");
+    log.info("Added starter MIDI track, clip, and note pattern");
     log.info("Serialized project state: "
              + juce::String(aidaw::ProjectSerializer::toJson(project).length())
              + " characters");
@@ -29,7 +37,7 @@ MainComponent::MainComponent()
     {
         audioEngine.play();
         log.info("Transport started");
-        diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
+        refreshDiagnostics();
         refreshStatus();
     };
     addAndMakeVisible(playButton);
@@ -38,10 +46,43 @@ MainComponent::MainComponent()
     {
         audioEngine.stop();
         log.info("Transport stopped");
-        diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
+        refreshDiagnostics();
         refreshStatus();
     };
     addAndMakeVisible(stopButton);
+
+    transposeUpButton.onClick = [this]
+    {
+        project.transposeClip(demoTrackId, demoClipId, 12);
+        audioEngine.refreshProjectGraph();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(transposeUpButton);
+
+    transposeDownButton.onClick = [this]
+    {
+        project.transposeClip(demoTrackId, demoClipId, -12);
+        audioEngine.refreshProjectGraph();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(transposeDownButton);
+
+    quantizeButton.onClick = [this]
+    {
+        project.quantizeClip(demoTrackId, demoClipId, 0.25);
+        audioEngine.refreshProjectGraph();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(quantizeButton);
+
+    duplicateButton.onClick = [this]
+    {
+        auto& duplicated = project.duplicateClip(demoTrackId, demoClipId, 4.0);
+        log.info("Duplicated clip to beat " + juce::String(duplicated.startBeat, 2));
+        audioEngine.refreshProjectGraph();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(duplicateButton);
 
     metronomeToggle.setToggleState(audioEngine.isMetronomeEnabled(), juce::dontSendNotification);
     metronomeToggle.onClick = [this]
@@ -49,7 +90,7 @@ MainComponent::MainComponent()
         audioEngine.setMetronomeEnabled(metronomeToggle.getToggleState());
         log.info(juce::String("Metronome ")
                  + (metronomeToggle.getToggleState() ? "enabled" : "disabled"));
-        diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
+        refreshDiagnostics();
     };
     addAndMakeVisible(metronomeToggle);
 
@@ -97,6 +138,14 @@ void MainComponent::resized()
     transportBounds.removeFromLeft(8);
     stopButton.setBounds(transportBounds.removeFromLeft(84));
     transportBounds.removeFromLeft(16);
+    transposeDownButton.setBounds(transportBounds.removeFromLeft(64));
+    transportBounds.removeFromLeft(8);
+    transposeUpButton.setBounds(transportBounds.removeFromLeft(64));
+    transportBounds.removeFromLeft(8);
+    quantizeButton.setBounds(transportBounds.removeFromLeft(96));
+    transportBounds.removeFromLeft(8);
+    duplicateButton.setBounds(transportBounds.removeFromLeft(96));
+    transportBounds.removeFromLeft(16);
     metronomeToggle.setBounds(transportBounds.removeFromLeft(140));
 
     bounds.removeFromTop(16);
@@ -129,4 +178,9 @@ void MainComponent::refreshStatus()
                             + " ms | overruns "
                             + juce::String(audioEngine.getOverrunCount()),
                         juce::dontSendNotification);
+}
+
+void MainComponent::refreshDiagnostics()
+{
+    diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
 }

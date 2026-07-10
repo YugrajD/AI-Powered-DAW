@@ -25,6 +25,7 @@ public:
     void stop() noexcept;
     void setTempo(double bpm) noexcept;
     void setMetronomeEnabled(bool enabled) noexcept;
+    void refreshProjectGraph();
 
     [[nodiscard]] double getSampleRate() const noexcept { return sampleRate.load(); }
     [[nodiscard]] int getBlockSize() const noexcept { return blockSize.load(); }

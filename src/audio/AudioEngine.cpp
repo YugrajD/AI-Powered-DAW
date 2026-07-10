@@ -67,6 +67,15 @@ void AudioEngine::setMetronomeEnabled(bool enabled) noexcept
     metronomeEnabled.store(enabled);
 }
 
+void AudioEngine::refreshProjectGraph()
+{
+    pause();
+    trackGraph.configureFromProject(project);
+    if (sampleRate.load() > 0.0 && blockSize.load() > 0)
+        trackGraph.prepare(sampleRate.load(), blockSize.load(), 2);
+    log.info("Audio graph refreshed from project MIDI");
+}
+
 double AudioEngine::getLastCallbackMilliseconds() const noexcept
 {
     return static_cast<double>(lastCallbackMicros.load()) / 1000.0;

@@ -19,14 +19,21 @@ public:
 private:
     void timerCallback() override;
     void refreshStatus();
+    void refreshDiagnostics();
 
     aidaw::Project project;
     aidaw::DiagnosticLog log;
     aidaw::AudioEngine audioEngine;
+    aidaw::EntityId demoTrackId = 0;
+    aidaw::EntityId demoClipId = 0;
     juce::Label titleLabel;
     juce::Label statusLabel;
     juce::TextButton playButton { "Play" };
     juce::TextButton stopButton { "Stop" };
+    juce::TextButton transposeUpButton { "+12" };
+    juce::TextButton transposeDownButton { "-12" };
+    juce::TextButton quantizeButton { "Quantize" };
+    juce::TextButton duplicateButton { "Duplicate" };
     juce::ToggleButton metronomeToggle { "Metronome" };
     juce::TextEditor diagnosticsEditor;
 };
