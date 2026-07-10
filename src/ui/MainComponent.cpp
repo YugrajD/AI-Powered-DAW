@@ -3,25 +3,28 @@
 #include "../core/ProjectSerializer.h"
 
 MainComponent::MainComponent()
+    : audioEngine(log)
 {
     auto& drums = project.createTrack(aidaw::TrackType::midi, "Drums");
-    project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
+    [[maybe_unused]] auto& starterClip = project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
     log.info("Created project shell");
     log.info("Added starter MIDI track and clip");
     log.info("Serialized project state: "
              + juce::String(aidaw::ProjectSerializer::toJson(project).length())
              + " characters");
+    audioEngine.initialise();
 
     titleLabel.setText("AI Powered DAW", juce::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centredLeft);
     titleLabel.setFont(juce::FontOptions { 28.0f, juce::Font::bold });
     addAndMakeVisible(titleLabel);
 
-    statusLabel.setText("Stage 0: "
+    statusLabel.setText("Stage 1: "
                             + project.getName()
                             + " | "
                             + juce::String(project.getTracks().size())
-                            + " track",
+                            + " track | audio "
+                            + (audioEngine.isDeviceOpen() ? "online" : "offline"),
                         juce::dontSendNotification);
     statusLabel.setJustificationType(juce::Justification::centredLeft);
     statusLabel.setFont(juce::FontOptions { 15.0f });

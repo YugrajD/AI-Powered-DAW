@@ -6,6 +6,8 @@ juce_add_gui_app(AIPoweredDAW
 
 target_sources(AIPoweredDAW
     PRIVATE
+        audio/AudioEngine.cpp
+        audio/AudioEngine.h
         core/DiagnosticLog.cpp
         core/DiagnosticLog.h
         core/Project.cpp
@@ -18,6 +20,7 @@ target_sources(AIPoweredDAW
 
 target_compile_definitions(AIPoweredDAW
     PRIVATE
+        AIDAW_VERSION_STRING="${PROJECT_VERSION}"
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0)
 

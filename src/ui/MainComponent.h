@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../audio/AudioEngine.h"
 #include "../core/DiagnosticLog.h"
 #include "../core/Project.h"
 
@@ -16,6 +17,7 @@ public:
 private:
     aidaw::Project project;
     aidaw::DiagnosticLog log;
+    aidaw::AudioEngine audioEngine;
     juce::Label titleLabel;
     juce::Label statusLabel;
     juce::TextEditor diagnosticsEditor;

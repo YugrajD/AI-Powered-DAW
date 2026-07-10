@@ -28,7 +28,7 @@ class AIPoweredDAWApplication final : public juce::JUCEApplication
 {
 public:
     const juce::String getApplicationName() override { return "AI Powered DAW"; }
-    const juce::String getApplicationVersion() override { return ProjectInfo::versionString; }
+    const juce::String getApplicationVersion() override { return AIDAW_VERSION_STRING; }
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const juce::String&) override
