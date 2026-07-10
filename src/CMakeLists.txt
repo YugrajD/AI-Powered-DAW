@@ -6,7 +6,9 @@ juce_add_gui_app(AIPoweredDAW
 
 target_sources(AIPoweredDAW
     PRIVATE
-        Main.cpp)
+        Main.cpp
+        ui/MainComponent.cpp
+        ui/MainComponent.h)
 
 target_compile_definitions(AIPoweredDAW
     PRIVATE
