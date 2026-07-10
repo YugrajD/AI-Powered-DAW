@@ -105,6 +105,56 @@ MainComponent::MainComponent()
     };
     addAndMakeVisible(duplicateButton);
 
+    instrumentSelector.addItem("Sine Synth", 1);
+    instrumentSelector.addItem("Subtractive Synth", 2);
+    instrumentSelector.addItem("Drum Synth", 3);
+    instrumentSelector.onChange = [this]
+    {
+        const auto selectedId = instrumentSelector.getSelectedId();
+        auto instrument = aidaw::InstrumentType::sineSynth;
+        if (selectedId == 2)
+            instrument = aidaw::InstrumentType::subtractiveSynth;
+        else if (selectedId == 3)
+            instrument = aidaw::InstrumentType::drumSynth;
+
+        project.setTrackInstrument(demoTrackId, instrument);
+        log.info("Changed selected track instrument");
+        audioEngine.refreshProjectGraph();
+        inspectorPanel.repaint();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(instrumentSelector);
+
+    addLowPassButton.onClick = [this]
+    {
+        project.addTrackEffect(demoTrackId, aidaw::EffectType::lowPass, 0.45f);
+        log.info("Added low-pass effect");
+        audioEngine.refreshProjectGraph();
+        inspectorPanel.repaint();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(addLowPassButton);
+
+    addSaturationButton.onClick = [this]
+    {
+        project.addTrackEffect(demoTrackId, aidaw::EffectType::saturation, 0.35f);
+        log.info("Added saturation effect");
+        audioEngine.refreshProjectGraph();
+        inspectorPanel.repaint();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(addSaturationButton);
+
+    addDelayButton.onClick = [this]
+    {
+        project.addTrackEffect(demoTrackId, aidaw::EffectType::delay, 0.3f);
+        log.info("Added delay effect");
+        audioEngine.refreshProjectGraph();
+        inspectorPanel.repaint();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(addDelayButton);
+
     diagnosticsEditor.setMultiLine(true);
     diagnosticsEditor.setReadOnly(true);
     diagnosticsEditor.setScrollbarsShown(true);
@@ -116,6 +166,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(diagnosticsEditor);
 
     refreshStatus();
+    refreshDeviceControls();
     startTimerHz(20);
     setSize(1200, 760);
 }
@@ -155,6 +206,14 @@ void MainComponent::resized()
     quantizeButton.setBounds(editBounds.removeFromLeft(96));
     editBounds.removeFromLeft(8);
     duplicateButton.setBounds(editBounds.removeFromLeft(96));
+    editBounds.removeFromLeft(18);
+    instrumentSelector.setBounds(editBounds.removeFromLeft(168));
+    editBounds.removeFromLeft(8);
+    addLowPassButton.setBounds(editBounds.removeFromLeft(86));
+    editBounds.removeFromLeft(8);
+    addSaturationButton.setBounds(editBounds.removeFromLeft(86));
+    editBounds.removeFromLeft(8);
+    addDelayButton.setBounds(editBounds.removeFromLeft(78));
 
     bounds.removeFromTop(16);
     auto workspace = bounds.removeFromTop(496);
@@ -199,4 +258,18 @@ void MainComponent::refreshStatus()
 void MainComponent::refreshDiagnostics()
 {
     diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
+}
+
+void MainComponent::refreshDeviceControls()
+{
+    if (const auto* track = project.findTrack(demoTrackId))
+    {
+        int selectedId = 1;
+        if (track->instrument == aidaw::InstrumentType::subtractiveSynth)
+            selectedId = 2;
+        else if (track->instrument == aidaw::InstrumentType::drumSynth)
+            selectedId = 3;
+
+        instrumentSelector.setSelectedId(selectedId, juce::dontSendNotification);
+    }
 }

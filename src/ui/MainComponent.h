@@ -24,6 +24,7 @@ private:
     void timerCallback() override;
     void refreshStatus();
     void refreshDiagnostics();
+    void refreshDeviceControls();
 
     aidaw::Project project;
     aidaw::DiagnosticLog log;
@@ -40,5 +41,9 @@ private:
     juce::TextButton transposeDownButton { "-12" };
     juce::TextButton quantizeButton { "Quantize" };
     juce::TextButton duplicateButton { "Duplicate" };
+    juce::ComboBox instrumentSelector;
+    juce::TextButton addLowPassButton { "Low-pass" };
+    juce::TextButton addSaturationButton { "Saturate" };
+    juce::TextButton addDelayButton { "Delay" };
     juce::TextEditor diagnosticsEditor;
 };
