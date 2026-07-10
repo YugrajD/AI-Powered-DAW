@@ -1,11 +1,16 @@
 #include "MainComponent.h"
 
+#include "../core/ProjectSerializer.h"
+
 MainComponent::MainComponent()
 {
     auto& drums = project.createTrack(aidaw::TrackType::midi, "Drums");
     project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
     log.info("Created project shell");
     log.info("Added starter MIDI track and clip");
+    log.info("Serialized project state: "
+             + juce::String(aidaw::ProjectSerializer::toJson(project).length())
+             + " characters");
 
     titleLabel.setText("AI Powered DAW", juce::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centredLeft);

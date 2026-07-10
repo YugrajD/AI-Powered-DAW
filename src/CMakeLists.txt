@@ -10,6 +10,8 @@ target_sources(AIPoweredDAW
         core/DiagnosticLog.h
         core/Project.cpp
         core/Project.h
+        core/ProjectSerializer.cpp
+        core/ProjectSerializer.h
         Main.cpp
         ui/MainComponent.cpp
         ui/MainComponent.h)
