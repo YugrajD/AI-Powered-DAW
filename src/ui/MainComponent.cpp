@@ -36,6 +36,8 @@ MainComponent::MainComponent()
     addAndMakeVisible(arrangementView);
     pianoRollView.setClip(demoTrackId, demoClipId);
     addAndMakeVisible(pianoRollView);
+    inspectorPanel.setSelection(demoTrackId, demoClipId);
+    addAndMakeVisible(inspectorPanel);
 
     playButton.onClick = [this]
     {
@@ -153,9 +155,12 @@ void MainComponent::resized()
     metronomeToggle.setBounds(transportBounds.removeFromLeft(140));
 
     bounds.removeFromTop(16);
-    arrangementView.setBounds(bounds.removeFromTop(260));
+    auto workspace = bounds.removeFromTop(496);
+    inspectorPanel.setBounds(workspace.removeFromRight(260));
+    workspace.removeFromRight(16);
+    arrangementView.setBounds(workspace.removeFromTop(260));
     bounds.removeFromTop(16);
-    pianoRollView.setBounds(bounds.removeFromTop(220));
+    pianoRollView.setBounds(workspace.removeFromTop(220));
     bounds.removeFromTop(16);
     diagnosticsEditor.setBounds(bounds.removeFromBottom(180));
 }

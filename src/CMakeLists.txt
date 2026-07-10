@@ -19,6 +19,8 @@ target_sources(AIPoweredDAW
         Main.cpp
         ui/ArrangementView.cpp
         ui/ArrangementView.h
+        ui/InspectorPanel.cpp
+        ui/InspectorPanel.h
         ui/MainComponent.cpp
         ui/MainComponent.h
         ui/PianoRollView.cpp
