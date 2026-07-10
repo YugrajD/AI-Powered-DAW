@@ -9,6 +9,8 @@ MainComponent::MainComponent()
     drums.instrument = aidaw::InstrumentType::drumSynth;
     drums.gain = 0.35f;
     drums.pan = -0.15f;
+    project.addTrackEffect(drums.id, aidaw::EffectType::saturation, 0.35f);
+    project.addTrackEffect(drums.id, aidaw::EffectType::delay, 0.25f);
     auto& starterClip = project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
     demoTrackId = drums.id;
     demoClipId = starterClip.id;

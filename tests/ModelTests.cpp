@@ -145,6 +145,28 @@ void testTrackProcessingGraphInstrumentModes()
 
     expect(channelAbsSum(output, 0) > 0.1f, "instrument modes render non-silent output");
 }
+
+void testTrackProcessingGraphEffects()
+{
+    aidaw::Project project;
+    auto& track = project.createTrack(aidaw::TrackType::midi, "Effected");
+    track.instrument = aidaw::InstrumentType::subtractiveSynth;
+    project.addTrackEffect(track.id, aidaw::EffectType::lowPass, 0.5f);
+    project.addTrackEffect(track.id, aidaw::EffectType::saturation, 0.25f);
+    project.addTrackEffect(track.id, aidaw::EffectType::delay, 0.4f);
+
+    auto& clip = project.createClip(track.id, "Tone", 0.0, 4.0);
+    [[maybe_unused]] auto& note = project.addMidiNote(track.id, clip.id, 48, 0.0, 1.0, 1.0f);
+
+    aidaw::TrackProcessingGraph graph;
+    graph.configureFromProject(project);
+    graph.prepare(44100.0, 1024, 2);
+
+    juce::AudioBuffer<float> output(2, 1024);
+    graph.render(output, output.getNumSamples(), 0.0, 120.0 / 60.0 / 44100.0);
+
+    expect(channelAbsSum(output, 0) > 0.1f, "effect chain keeps output audible");
+}
 }
 
 int main()
@@ -154,6 +176,7 @@ int main()
     testMidiClipEditingHelpers();
     testTrackProcessingGraphGainPan();
     testTrackProcessingGraphInstrumentModes();
+    testTrackProcessingGraphEffects();
 
     if (failures != 0)
         return 1;

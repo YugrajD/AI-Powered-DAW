@@ -36,11 +36,16 @@ private:
         float gain = 1.0f;
         float pan = 0.0f;
         std::vector<SequencedNote> notes;
+        std::vector<EffectSlot> effects;
         float lowPassState = 0.0f;
+        std::vector<float> effectLowPassState;
+        juce::AudioBuffer<float> delayBuffer;
+        int delayWritePosition = 0;
     };
 
     std::vector<TrackProcessor> tracks;
     juce::AudioBuffer<float> trackScratch;
     double currentSampleRate = 0.0;
+    int currentOutputChannels = 0;
 };
 }

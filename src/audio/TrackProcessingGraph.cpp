@@ -58,6 +58,7 @@ void TrackProcessingGraph::configureFromProject(const Project& project)
         processor.instrument = track.instrument;
         processor.gain = track.gain;
         processor.pan = track.pan;
+        processor.effects = track.effects;
 
         if (track.type == TrackType::midi)
         {
@@ -95,8 +96,18 @@ void TrackProcessingGraph::configureFromProject(const Project& project)
 void TrackProcessingGraph::prepare(double sampleRate, int maxBlockSize, int numOutputChannels)
 {
     currentSampleRate = sampleRate;
+    currentOutputChannels = numOutputChannels;
     trackScratch.setSize(numOutputChannels, maxBlockSize, false, false, true);
     trackScratch.clear();
+
+    const auto maxDelaySamples = juce::jmax(1, static_cast<int>(sampleRate * 0.5));
+    for (auto& track : tracks)
+    {
+        track.effectLowPassState.assign(static_cast<size_t>(numOutputChannels), 0.0f);
+        track.delayBuffer.setSize(numOutputChannels, maxDelaySamples, false, false, true);
+        track.delayBuffer.clear();
+        track.delayWritePosition = 0;
+    }
 }
 
 void TrackProcessingGraph::render(juce::AudioBuffer<float>& output,
@@ -170,6 +181,77 @@ void TrackProcessingGraph::render(juce::AudioBuffer<float>& output,
 
             for (int channel = 2; channel < trackScratch.getNumChannels(); ++channel)
                 trackScratch.applyGain(channel, 0, numSamples, track.gain);
+        }
+
+        for (const auto& effect : track.effects)
+        {
+            if (! effect.enabled)
+                continue;
+
+            const auto amount = juce::jlimit(0.0f, 1.0f, effect.amount);
+            switch (effect.type)
+            {
+                case EffectType::lowPass:
+                {
+                    const auto coefficient = juce::jlimit(0.01f, 0.35f, 0.02f + (amount * 0.18f));
+                    for (int channel = 0; channel < trackScratch.getNumChannels(); ++channel)
+                    {
+                        auto* data = trackScratch.getWritePointer(channel);
+                        auto state = track.effectLowPassState[static_cast<size_t>(channel)];
+                        for (int sample = 0; sample < numSamples; ++sample)
+                        {
+                            state += coefficient * (data[sample] - state);
+                            data[sample] = state;
+                        }
+                        track.effectLowPassState[static_cast<size_t>(channel)] = state;
+                    }
+                    break;
+                }
+
+                case EffectType::saturation:
+                {
+                    const auto drive = 1.0f + (amount * 8.0f);
+                    const auto trim = 1.0f / std::tanh(drive);
+                    for (int channel = 0; channel < trackScratch.getNumChannels(); ++channel)
+                    {
+                        auto* data = trackScratch.getWritePointer(channel);
+                        for (int sample = 0; sample < numSamples; ++sample)
+                            data[sample] = std::tanh(data[sample] * drive) * trim * 0.85f;
+                    }
+                    break;
+                }
+
+                case EffectType::delay:
+                {
+                    if (track.delayBuffer.getNumSamples() <= 1)
+                        break;
+
+                    const auto delaySamples = juce::jlimit(1,
+                                                           track.delayBuffer.getNumSamples() - 1,
+                                                           static_cast<int>(currentSampleRate * (0.08 + (amount * 0.22))));
+                    const auto feedback = 0.18f + (amount * 0.34f);
+                    const auto wet = 0.12f + (amount * 0.28f);
+
+                    for (int sample = 0; sample < numSamples; ++sample)
+                    {
+                        const auto readPosition = (track.delayWritePosition + track.delayBuffer.getNumSamples() - delaySamples)
+                                                  % track.delayBuffer.getNumSamples();
+
+                        for (int channel = 0; channel < trackScratch.getNumChannels(); ++channel)
+                        {
+                            auto* data = trackScratch.getWritePointer(channel);
+                            auto* delayData = track.delayBuffer.getWritePointer(channel);
+                            const auto delayed = delayData[readPosition];
+                            const auto input = data[sample];
+                            data[sample] = input + (delayed * wet);
+                            delayData[track.delayWritePosition] = input + (delayed * feedback);
+                        }
+
+                        track.delayWritePosition = (track.delayWritePosition + 1) % track.delayBuffer.getNumSamples();
+                    }
+                    break;
+                }
+            }
         }
 
         for (int channel = 0; channel < output.getNumChannels(); ++channel)
