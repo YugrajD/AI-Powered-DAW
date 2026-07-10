@@ -8,6 +8,41 @@ double midiPitchToFrequency(int pitch) noexcept
 {
     return 440.0 * std::pow(2.0, (static_cast<double>(pitch) - 69.0) / 12.0);
 }
+
+float renderSine(double phase, float velocity) noexcept
+{
+    return static_cast<float>(std::sin(phase) * velocity * 0.16);
+}
+
+float renderSubtractive(double phase, float velocity, float& lowPassState) noexcept
+{
+    const auto saw = static_cast<float>((phase / juce::MathConstants<double>::pi) - 1.0);
+    const auto folded = std::fmod(saw + 3.0f, 2.0f) - 1.0f;
+    lowPassState += 0.08f * ((folded * velocity * 0.24f) - lowPassState);
+    return lowPassState;
+}
+
+float renderDrum(double seconds, int pitch, float velocity) noexcept
+{
+    const auto decay = std::exp(-seconds * 18.0);
+    if (pitch < 40)
+    {
+        const auto sweep = 42.0 + (110.0 * std::exp(-seconds * 24.0));
+        return static_cast<float>(std::sin(juce::MathConstants<double>::twoPi * sweep * seconds) * decay * velocity * 0.55);
+    }
+
+    if (pitch < 46)
+    {
+        const auto tone = std::sin(juce::MathConstants<double>::twoPi * 190.0 * seconds);
+        const auto snap = std::sin(juce::MathConstants<double>::twoPi * 910.0 * seconds)
+                          * std::exp(-seconds * 38.0);
+        return static_cast<float>(((tone * 0.65) + (snap * 0.35)) * decay * velocity * 0.38);
+    }
+
+    const auto metallic = std::sin(juce::MathConstants<double>::twoPi * 6200.0 * seconds)
+                          + std::sin(juce::MathConstants<double>::twoPi * 7310.0 * seconds);
+    return static_cast<float>(metallic * 0.5 * std::exp(-seconds * 55.0) * velocity * 0.18);
+}
 }
 
 void TrackProcessingGraph::configureFromProject(const Project& project)
@@ -20,6 +55,7 @@ void TrackProcessingGraph::configureFromProject(const Project& project)
         const auto& track = project.getTracks()[index];
         TrackProcessor processor;
         processor.id = track.id;
+        processor.instrument = track.instrument;
         processor.gain = track.gain;
         processor.pan = track.pan;
 
@@ -98,7 +134,18 @@ void TrackProcessingGraph::render(juce::AudioBuffer<float>& output,
                     const auto phase = juce::MathConstants<double>::twoPi
                                        * midiPitchToFrequency(note.pitch)
                                        * seconds;
-                    sampleValue += static_cast<float>(std::sin(phase) * note.velocity * 0.16);
+                    switch (track.instrument)
+                    {
+                        case InstrumentType::sineSynth:
+                            sampleValue += renderSine(phase, note.velocity);
+                            break;
+                        case InstrumentType::subtractiveSynth:
+                            sampleValue += renderSubtractive(phase, note.velocity, track.lowPassState);
+                            break;
+                        case InstrumentType::drumSynth:
+                            sampleValue += renderDrum(seconds, note.pitch, note.velocity);
+                            break;
+                    }
                 }
 
                 mono[sample] = juce::jlimit(-0.8f, 0.8f, sampleValue);

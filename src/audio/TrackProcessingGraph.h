@@ -32,9 +32,11 @@ private:
         };
 
         EntityId id = 0;
+        InstrumentType instrument = InstrumentType::sineSynth;
         float gain = 1.0f;
         float pan = 0.0f;
         std::vector<SequencedNote> notes;
+        float lowPassState = 0.0f;
     };
 
     std::vector<TrackProcessor> tracks;

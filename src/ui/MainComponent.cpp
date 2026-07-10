@@ -6,6 +6,7 @@ MainComponent::MainComponent()
     : audioEngine(project, log)
 {
     auto& drums = project.createTrack(aidaw::TrackType::midi, "Drums");
+    drums.instrument = aidaw::InstrumentType::drumSynth;
     drums.gain = 0.35f;
     drums.pan = -0.15f;
     auto& starterClip = project.createClip(drums.id, "Starter Loop", 0.0, 4.0);

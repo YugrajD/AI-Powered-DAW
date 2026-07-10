@@ -122,6 +122,29 @@ void testTrackProcessingGraphGainPan()
     expect(channelAbsSum(output, 0) > 0.1f, "left channel receives diagnostic tone");
     expect(channelAbsSum(output, 1) < 0.0001f, "right channel is muted by hard-left pan");
 }
+
+void testTrackProcessingGraphInstrumentModes()
+{
+    aidaw::Project project;
+    auto& sineTrack = project.createTrack(aidaw::TrackType::midi, "Sine");
+    sineTrack.instrument = aidaw::InstrumentType::sineSynth;
+    auto& sineClip = project.createClip(sineTrack.id, "Sine Note", 0.0, 4.0);
+    [[maybe_unused]] auto& sineNote = project.addMidiNote(sineTrack.id, sineClip.id, 60, 0.0, 1.0, 1.0f);
+
+    auto& drumTrack = project.createTrack(aidaw::TrackType::midi, "Drums");
+    drumTrack.instrument = aidaw::InstrumentType::drumSynth;
+    auto& drumClip = project.createClip(drumTrack.id, "Kick", 0.0, 4.0);
+    [[maybe_unused]] auto& kick = project.addMidiNote(drumTrack.id, drumClip.id, 36, 0.0, 0.25, 1.0f);
+
+    aidaw::TrackProcessingGraph graph;
+    graph.configureFromProject(project);
+    graph.prepare(44100.0, 512, 2);
+
+    juce::AudioBuffer<float> output(2, 512);
+    graph.render(output, output.getNumSamples(), 0.0, 120.0 / 60.0 / 44100.0);
+
+    expect(channelAbsSum(output, 0) > 0.1f, "instrument modes render non-silent output");
+}
 }
 
 int main()
@@ -130,6 +153,7 @@ int main()
     testProjectSerializationRoundTrip();
     testMidiClipEditingHelpers();
     testTrackProcessingGraphGainPan();
+    testTrackProcessingGraphInstrumentModes();
 
     if (failures != 0)
         return 1;
