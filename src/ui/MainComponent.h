@@ -4,6 +4,7 @@
 #include "../core/DiagnosticLog.h"
 #include "../core/Project.h"
 #include "ArrangementView.h"
+#include "PianoRollView.h"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -30,6 +31,7 @@ private:
     juce::Label titleLabel;
     juce::Label statusLabel;
     ArrangementView arrangementView { project };
+    PianoRollView pianoRollView { project };
     juce::TextButton playButton { "Play" };
     juce::TextButton stopButton { "Stop" };
     juce::TextButton transposeUpButton { "+12" };

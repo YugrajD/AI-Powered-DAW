@@ -34,6 +34,8 @@ MainComponent::MainComponent()
     addAndMakeVisible(statusLabel);
 
     addAndMakeVisible(arrangementView);
+    pianoRollView.setClip(demoTrackId, demoClipId);
+    addAndMakeVisible(pianoRollView);
 
     playButton.onClick = [this]
     {
@@ -152,6 +154,8 @@ void MainComponent::resized()
 
     bounds.removeFromTop(16);
     arrangementView.setBounds(bounds.removeFromTop(260));
+    bounds.removeFromTop(16);
+    pianoRollView.setBounds(bounds.removeFromTop(220));
     bounds.removeFromTop(16);
     diagnosticsEditor.setBounds(bounds.removeFromBottom(180));
 }

@@ -20,7 +20,9 @@ target_sources(AIPoweredDAW
         ui/ArrangementView.cpp
         ui/ArrangementView.h
         ui/MainComponent.cpp
-        ui/MainComponent.h)
+        ui/MainComponent.h
+        ui/PianoRollView.cpp
+        ui/PianoRollView.h)
 
 target_compile_definitions(AIPoweredDAW
     PRIVATE
