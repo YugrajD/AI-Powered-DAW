@@ -32,3 +32,10 @@ The built-in instruments/effects milestone adds explicit track device state,
 three internal instruments (sine, subtractive, and drum synth), built-in
 low-pass, saturation, and delay effects, device serialization, inspector
 display, device controls, and render-path tests.
+
+## Stage 5
+
+The audio clips milestone adds audio clip metadata, WAV/AIFF import, clip
+gain/fade fields, audio file loading outside the realtime callback, audio
+clip playback through the track graph, waveform-style arrangement previews,
+and render-path coverage for imported audio clips.
