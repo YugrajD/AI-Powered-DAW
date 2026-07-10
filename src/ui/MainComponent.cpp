@@ -33,29 +33,33 @@ MainComponent::MainComponent()
     statusLabel.setFont(juce::FontOptions { 15.0f });
     addAndMakeVisible(statusLabel);
 
-    addAndMakeVisible(arrangementView);
-    pianoRollView.setClip(demoTrackId, demoClipId);
-    addAndMakeVisible(pianoRollView);
-    inspectorPanel.setSelection(demoTrackId, demoClipId);
-    addAndMakeVisible(inspectorPanel);
-
-    playButton.onClick = [this]
+    transportBar.onPlay = [this]
     {
         audioEngine.play();
         log.info("Transport started");
         refreshDiagnostics();
         refreshStatus();
     };
-    addAndMakeVisible(playButton);
-
-    stopButton.onClick = [this]
+    transportBar.onStop = [this]
     {
         audioEngine.stop();
         log.info("Transport stopped");
         refreshDiagnostics();
         refreshStatus();
     };
-    addAndMakeVisible(stopButton);
+    transportBar.onMetronomeChanged = [this](bool enabled)
+    {
+        audioEngine.setMetronomeEnabled(enabled);
+        log.info(juce::String("Metronome ") + (enabled ? "enabled" : "disabled"));
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(transportBar);
+
+    addAndMakeVisible(arrangementView);
+    pianoRollView.setClip(demoTrackId, demoClipId);
+    addAndMakeVisible(pianoRollView);
+    inspectorPanel.setSelection(demoTrackId, demoClipId);
+    addAndMakeVisible(inspectorPanel);
 
     transposeUpButton.onClick = [this]
     {
@@ -89,16 +93,6 @@ MainComponent::MainComponent()
         refreshDiagnostics();
     };
     addAndMakeVisible(duplicateButton);
-
-    metronomeToggle.setToggleState(audioEngine.isMetronomeEnabled(), juce::dontSendNotification);
-    metronomeToggle.onClick = [this]
-    {
-        audioEngine.setMetronomeEnabled(metronomeToggle.getToggleState());
-        log.info(juce::String("Metronome ")
-                 + (metronomeToggle.getToggleState() ? "enabled" : "disabled"));
-        refreshDiagnostics();
-    };
-    addAndMakeVisible(metronomeToggle);
 
     diagnosticsEditor.setMultiLine(true);
     diagnosticsEditor.setReadOnly(true);
@@ -139,20 +133,17 @@ void MainComponent::resized()
     statusLabel.setBounds(bounds.removeFromTop(28));
     bounds.removeFromTop(12);
 
-    auto transportBounds = bounds.removeFromTop(36);
-    playButton.setBounds(transportBounds.removeFromLeft(84));
-    transportBounds.removeFromLeft(8);
-    stopButton.setBounds(transportBounds.removeFromLeft(84));
-    transportBounds.removeFromLeft(16);
-    transposeDownButton.setBounds(transportBounds.removeFromLeft(64));
-    transportBounds.removeFromLeft(8);
-    transposeUpButton.setBounds(transportBounds.removeFromLeft(64));
-    transportBounds.removeFromLeft(8);
-    quantizeButton.setBounds(transportBounds.removeFromLeft(96));
-    transportBounds.removeFromLeft(8);
-    duplicateButton.setBounds(transportBounds.removeFromLeft(96));
-    transportBounds.removeFromLeft(16);
-    metronomeToggle.setBounds(transportBounds.removeFromLeft(140));
+    transportBar.setBounds(bounds.removeFromTop(42));
+    bounds.removeFromTop(10);
+
+    auto editBounds = bounds.removeFromTop(34);
+    transposeDownButton.setBounds(editBounds.removeFromLeft(64));
+    editBounds.removeFromLeft(8);
+    transposeUpButton.setBounds(editBounds.removeFromLeft(64));
+    editBounds.removeFromLeft(8);
+    quantizeButton.setBounds(editBounds.removeFromLeft(96));
+    editBounds.removeFromLeft(8);
+    duplicateButton.setBounds(editBounds.removeFromLeft(96));
 
     bounds.removeFromTop(16);
     auto workspace = bounds.removeFromTop(496);
@@ -167,6 +158,7 @@ void MainComponent::resized()
 
 void MainComponent::timerCallback()
 {
+    transportBar.refresh();
     refreshStatus();
 }
 

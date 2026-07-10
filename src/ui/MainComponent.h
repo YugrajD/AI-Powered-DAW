@@ -6,6 +6,7 @@
 #include "ArrangementView.h"
 #include "InspectorPanel.h"
 #include "PianoRollView.h"
+#include "TransportBar.h"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -34,12 +35,10 @@ private:
     ArrangementView arrangementView { project };
     PianoRollView pianoRollView { project };
     InspectorPanel inspectorPanel { project };
-    juce::TextButton playButton { "Play" };
-    juce::TextButton stopButton { "Stop" };
+    TransportBar transportBar { audioEngine };
     juce::TextButton transposeUpButton { "+12" };
     juce::TextButton transposeDownButton { "-12" };
     juce::TextButton quantizeButton { "Quantize" };
     juce::TextButton duplicateButton { "Duplicate" };
-    juce::ToggleButton metronomeToggle { "Metronome" };
     juce::TextEditor diagnosticsEditor;
 };
