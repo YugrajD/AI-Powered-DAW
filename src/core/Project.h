@@ -65,9 +65,21 @@ public:
 
     [[nodiscard]] Track& createTrack(TrackType type, juce::String trackName);
     [[nodiscard]] Clip& createClip(EntityId trackId, juce::String clipName, double startBeat, double lengthBeats);
+    [[nodiscard]] MidiNote& addMidiNote(EntityId trackId,
+                                        EntityId clipId,
+                                        int pitch,
+                                        double startBeat,
+                                        double lengthBeats,
+                                        float velocity);
+    [[nodiscard]] Clip& duplicateClip(EntityId trackId, EntityId clipId, double newStartBeat);
+
+    bool quantizeClip(EntityId trackId, EntityId clipId, double gridBeats);
+    bool transposeClip(EntityId trackId, EntityId clipId, int semitones);
 
     [[nodiscard]] Track* findTrack(EntityId trackId) noexcept;
     [[nodiscard]] const Track* findTrack(EntityId trackId) const noexcept;
+    [[nodiscard]] Clip* findClip(EntityId trackId, EntityId clipId) noexcept;
+    [[nodiscard]] const Clip* findClip(EntityId trackId, EntityId clipId) const noexcept;
 
     [[nodiscard]] const std::vector<Track>& getTracks() const noexcept { return tracks; }
 

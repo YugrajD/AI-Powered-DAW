@@ -34,6 +34,63 @@ Clip& Project::createClip(EntityId trackId, juce::String clipName, double startB
     return clip;
 }
 
+MidiNote& Project::addMidiNote(EntityId trackId,
+                               EntityId clipId,
+                               int pitch,
+                               double startBeat,
+                               double lengthBeats,
+                               float velocity)
+{
+    auto* clip = findClip(trackId, clipId);
+    jassert(clip != nullptr);
+
+    auto& note = clip->notes.emplace_back();
+    note.pitch = juce::jlimit(0, 127, pitch);
+    note.startBeat = juce::jlimit(0.0, clip->lengthBeats, startBeat);
+    note.lengthBeats = juce::jlimit(0.03125, clip->lengthBeats, lengthBeats);
+    note.velocity = juce::jlimit(0.0f, 1.0f, velocity);
+    return note;
+}
+
+Clip& Project::duplicateClip(EntityId trackId, EntityId clipId, double newStartBeat)
+{
+    auto* track = findTrack(trackId);
+    auto* source = findClip(trackId, clipId);
+    jassert(track != nullptr);
+    jassert(source != nullptr);
+
+    auto duplicated = *source;
+    duplicated.id = allocateId();
+    duplicated.name = source->name + " Copy";
+    duplicated.startBeat = juce::jmax(0.0, newStartBeat);
+    track->clips.push_back(std::move(duplicated));
+    return track->clips.back();
+}
+
+bool Project::quantizeClip(EntityId trackId, EntityId clipId, double gridBeats)
+{
+    auto* clip = findClip(trackId, clipId);
+    if (clip == nullptr || gridBeats <= 0.0)
+        return false;
+
+    for (auto& note : clip->notes)
+        note.startBeat = std::round(note.startBeat / gridBeats) * gridBeats;
+
+    return true;
+}
+
+bool Project::transposeClip(EntityId trackId, EntityId clipId, int semitones)
+{
+    auto* clip = findClip(trackId, clipId);
+    if (clip == nullptr)
+        return false;
+
+    for (auto& note : clip->notes)
+        note.pitch = juce::jlimit(0, 127, note.pitch + semitones);
+
+    return true;
+}
+
 Track* Project::findTrack(EntityId trackId) noexcept
 {
     for (auto& track : tracks)
@@ -48,6 +105,32 @@ const Track* Project::findTrack(EntityId trackId) const noexcept
     for (const auto& track : tracks)
         if (track.id == trackId)
             return &track;
+
+    return nullptr;
+}
+
+Clip* Project::findClip(EntityId trackId, EntityId clipId) noexcept
+{
+    auto* track = findTrack(trackId);
+    if (track == nullptr)
+        return nullptr;
+
+    for (auto& clip : track->clips)
+        if (clip.id == clipId)
+            return &clip;
+
+    return nullptr;
+}
+
+const Clip* Project::findClip(EntityId trackId, EntityId clipId) const noexcept
+{
+    const auto* track = findTrack(trackId);
+    if (track == nullptr)
+        return nullptr;
+
+    for (const auto& clip : track->clips)
+        if (clip.id == clipId)
+            return &clip;
 
     return nullptr;
 }
