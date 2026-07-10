@@ -27,5 +27,6 @@ private:
     juce::Label statusLabel;
     juce::TextButton playButton { "Play" };
     juce::TextButton stopButton { "Stop" };
+    juce::ToggleButton metronomeToggle { "Metronome" };
     juce::TextEditor diagnosticsEditor;
 };

@@ -22,11 +22,13 @@ public:
     void pause() noexcept;
     void stop() noexcept;
     void setTempo(double bpm) noexcept;
+    void setMetronomeEnabled(bool enabled) noexcept;
 
     [[nodiscard]] double getSampleRate() const noexcept { return sampleRate.load(); }
     [[nodiscard]] int getBlockSize() const noexcept { return blockSize.load(); }
     [[nodiscard]] bool isDeviceOpen() const noexcept { return deviceOpen.load(); }
     [[nodiscard]] bool isPlaying() const noexcept { return playing.load(); }
+    [[nodiscard]] bool isMetronomeEnabled() const noexcept { return metronomeEnabled.load(); }
     [[nodiscard]] double getTempo() const noexcept { return tempoBpm.load(); }
     [[nodiscard]] double getPositionBeats() const noexcept { return positionBeats.load(); }
 
@@ -48,5 +50,12 @@ private:
     std::atomic<int> blockSize { 0 };
     std::atomic<bool> deviceOpen { false };
     std::atomic<bool> playing { false };
+    std::atomic<bool> metronomeEnabled { true };
+
+    double nextMetronomeBeat = 0.0;
+    double clickPhase = 0.0;
+    double clickFrequency = 880.0;
+    int clickSamplesRemaining = 0;
+    bool wasPlayingLastBlock = false;
 };
 }

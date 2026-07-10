@@ -41,6 +41,16 @@ MainComponent::MainComponent()
     };
     addAndMakeVisible(stopButton);
 
+    metronomeToggle.setToggleState(audioEngine.isMetronomeEnabled(), juce::dontSendNotification);
+    metronomeToggle.onClick = [this]
+    {
+        audioEngine.setMetronomeEnabled(metronomeToggle.getToggleState());
+        log.info(juce::String("Metronome ")
+                 + (metronomeToggle.getToggleState() ? "enabled" : "disabled"));
+        diagnosticsEditor.setText(log.toDisplayString(), juce::dontSendNotification);
+    };
+    addAndMakeVisible(metronomeToggle);
+
     diagnosticsEditor.setMultiLine(true);
     diagnosticsEditor.setReadOnly(true);
     diagnosticsEditor.setScrollbarsShown(true);
@@ -84,6 +94,8 @@ void MainComponent::resized()
     playButton.setBounds(transportBounds.removeFromLeft(84));
     transportBounds.removeFromLeft(8);
     stopButton.setBounds(transportBounds.removeFromLeft(84));
+    transportBounds.removeFromLeft(16);
+    metronomeToggle.setBounds(transportBounds.removeFromLeft(140));
 
     bounds.removeFromTop(16);
     diagnosticsEditor.setBounds(bounds.removeFromBottom(180));

@@ -57,6 +57,11 @@ void AudioEngine::setTempo(double bpm) noexcept
     tempoBpm.store(juce::jlimit(40.0, 240.0, bpm));
 }
 
+void AudioEngine::setMetronomeEnabled(bool enabled) noexcept
+{
+    metronomeEnabled.store(enabled);
+}
+
 void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
 {
     if (device == nullptr)
@@ -72,6 +77,7 @@ void AudioEngine::audioDeviceStopped()
     deviceOpen.store(false);
     sampleRate.store(0.0);
     blockSize.store(0);
+    wasPlayingLastBlock = false;
 }
 
 void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
@@ -86,10 +92,54 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
             juce::FloatVectorOperations::clear(output, numSamples);
 
     const auto currentSampleRate = sampleRate.load();
-    if (playing.load() && currentSampleRate > 0.0)
+    const auto currentlyPlaying = playing.load();
+
+    if (! currentlyPlaying || currentSampleRate <= 0.0)
     {
-        const auto beatsPerSample = tempoBpm.load() / 60.0 / currentSampleRate;
-        positionBeats.store(positionBeats.load() + (beatsPerSample * static_cast<double>(numSamples)));
+        wasPlayingLastBlock = false;
+        return;
     }
+
+    auto currentPosition = positionBeats.load();
+    const auto beatsPerSample = tempoBpm.load() / 60.0 / currentSampleRate;
+
+    if (! wasPlayingLastBlock)
+    {
+        nextMetronomeBeat = std::ceil(currentPosition);
+        if (juce::approximatelyEqual(nextMetronomeBeat, currentPosition))
+            nextMetronomeBeat = currentPosition;
+
+        wasPlayingLastBlock = true;
+    }
+
+    for (int sample = 0; sample < numSamples; ++sample)
+    {
+        if (metronomeEnabled.load() && currentPosition >= nextMetronomeBeat)
+        {
+            const auto beatNumber = static_cast<int>(std::floor(nextMetronomeBeat));
+            clickFrequency = (beatNumber % 4 == 0) ? 1320.0 : 880.0;
+            clickSamplesRemaining = static_cast<int>(currentSampleRate * 0.035);
+            clickPhase = 0.0;
+            nextMetronomeBeat += 1.0;
+        }
+
+        float clickSample = 0.0f;
+        if (clickSamplesRemaining > 0)
+        {
+            const auto envelope = static_cast<double>(clickSamplesRemaining)
+                                  / juce::jmax(1.0, currentSampleRate * 0.035);
+            clickSample = static_cast<float>(std::sin(clickPhase) * envelope * 0.25);
+            clickPhase += juce::MathConstants<double>::twoPi * clickFrequency / currentSampleRate;
+            --clickSamplesRemaining;
+        }
+
+        for (int channel = 0; channel < numOutputChannels; ++channel)
+            if (auto* output = outputChannelData[channel])
+                output[sample] += clickSample;
+
+        currentPosition += beatsPerSample;
+    }
+
+    positionBeats.store(currentPosition);
 }
 }
