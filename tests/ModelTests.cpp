@@ -1,5 +1,6 @@
 #include "core/Project.h"
 #include "core/ProjectSerializer.h"
+#include "audio/TrackProcessingGraph.h"
 
 #include <iostream>
 #include <string_view>
@@ -63,12 +64,42 @@ void testProjectSerializationRoundTrip()
     expect(restoredTrack.clips.front().notes.size() == 2, "note count round-trips");
     expect(restoredTrack.clips.front().notes.front().pitch == 36, "note pitch round-trips");
 }
+
+float channelAbsSum(const juce::AudioBuffer<float>& buffer, int channel)
+{
+    float sum = 0.0f;
+    const auto* data = buffer.getReadPointer(channel);
+
+    for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        sum += std::abs(data[sample]);
+
+    return sum;
+}
+
+void testTrackProcessingGraphGainPan()
+{
+    aidaw::Project project;
+    auto& track = project.createTrack(aidaw::TrackType::midi, "Diagnostic Tone");
+    track.gain = 0.5f;
+    track.pan = -1.0f;
+
+    aidaw::TrackProcessingGraph graph;
+    graph.configureFromProject(project);
+    graph.prepare(44100.0, 256, 2);
+
+    juce::AudioBuffer<float> output(2, 256);
+    graph.render(output, output.getNumSamples());
+
+    expect(channelAbsSum(output, 0) > 0.1f, "left channel receives diagnostic tone");
+    expect(channelAbsSum(output, 1) < 0.0001f, "right channel is muted by hard-left pan");
+}
 }
 
 int main()
 {
     testProjectModel();
     testProjectSerializationRoundTrip();
+    testTrackProcessingGraphGainPan();
 
     if (failures != 0)
         return 1;
