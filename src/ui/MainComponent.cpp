@@ -2,12 +2,20 @@
 
 MainComponent::MainComponent()
 {
+    auto& drums = project.createTrack(aidaw::TrackType::midi, "Drums");
+    project.createClip(drums.id, "Starter Loop", 0.0, 4.0);
+
     titleLabel.setText("AI Powered DAW", juce::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centredLeft);
     titleLabel.setFont(juce::FontOptions { 28.0f, juce::Font::bold });
     addAndMakeVisible(titleLabel);
 
-    statusLabel.setText("Stage 0: application shell", juce::dontSendNotification);
+    statusLabel.setText("Stage 0: "
+                            + project.getName()
+                            + " | "
+                            + juce::String(project.getTracks().size())
+                            + " track",
+                        juce::dontSendNotification);
     statusLabel.setJustificationType(juce::Justification::centredLeft);
     statusLabel.setFont(juce::FontOptions { 15.0f });
     addAndMakeVisible(statusLabel);
