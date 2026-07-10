@@ -97,9 +97,6 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
         if (auto* output = outputChannelData[channel])
             juce::FloatVectorOperations::clear(output, numSamples);
 
-    juce::AudioBuffer<float> outputBuffer(outputChannelData, numOutputChannels, numSamples);
-    trackGraph.render(outputBuffer, numSamples);
-
     const auto currentSampleRate = sampleRate.load();
     const auto currentlyPlaying = playing.load();
 
@@ -111,6 +108,8 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const*,
 
     auto currentPosition = positionBeats.load();
     const auto beatsPerSample = tempoBpm.load() / 60.0 / currentSampleRate;
+    juce::AudioBuffer<float> outputBuffer(outputChannelData, numOutputChannels, numSamples);
+    trackGraph.render(outputBuffer, numSamples);
 
     if (! wasPlayingLastBlock)
     {

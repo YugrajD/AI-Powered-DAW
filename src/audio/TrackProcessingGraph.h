@@ -23,6 +23,8 @@ private:
         EntityId id = 0;
         float gain = 1.0f;
         float pan = 0.0f;
+        double frequency = 110.0;
+        double phase = 0.0;
     };
 
     std::vector<TrackProcessor> tracks;
