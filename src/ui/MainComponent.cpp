@@ -33,6 +33,8 @@ MainComponent::MainComponent()
     statusLabel.setFont(juce::FontOptions { 15.0f });
     addAndMakeVisible(statusLabel);
 
+    addAndMakeVisible(arrangementView);
+
     playButton.onClick = [this]
     {
         audioEngine.play();
@@ -148,6 +150,8 @@ void MainComponent::resized()
     transportBounds.removeFromLeft(16);
     metronomeToggle.setBounds(transportBounds.removeFromLeft(140));
 
+    bounds.removeFromTop(16);
+    arrangementView.setBounds(bounds.removeFromTop(260));
     bounds.removeFromTop(16);
     diagnosticsEditor.setBounds(bounds.removeFromBottom(180));
 }

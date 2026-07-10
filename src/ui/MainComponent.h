@@ -3,6 +3,7 @@
 #include "../audio/AudioEngine.h"
 #include "../core/DiagnosticLog.h"
 #include "../core/Project.h"
+#include "ArrangementView.h"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -28,6 +29,7 @@ private:
     aidaw::EntityId demoClipId = 0;
     juce::Label titleLabel;
     juce::Label statusLabel;
+    ArrangementView arrangementView { project };
     juce::TextButton playButton { "Play" };
     juce::TextButton stopButton { "Stop" };
     juce::TextButton transposeUpButton { "+12" };

@@ -17,6 +17,8 @@ target_sources(AIPoweredDAW
         core/ProjectSerializer.cpp
         core/ProjectSerializer.h
         Main.cpp
+        ui/ArrangementView.cpp
+        ui/ArrangementView.h
         ui/MainComponent.cpp
         ui/MainComponent.h)
 
