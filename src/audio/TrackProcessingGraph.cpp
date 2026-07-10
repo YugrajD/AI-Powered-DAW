@@ -43,12 +43,28 @@ float renderDrum(double seconds, int pitch, float velocity) noexcept
                           + std::sin(juce::MathConstants<double>::twoPi * 7310.0 * seconds);
     return static_cast<float>(metallic * 0.5 * std::exp(-seconds * 55.0) * velocity * 0.18);
 }
+
+float fadeGainForBeat(double beat, double startBeat, double endBeat, double fadeInBeats, double fadeOutBeats) noexcept
+{
+    auto gain = 1.0;
+
+    if (fadeInBeats > 0.0)
+        gain = juce::jmin(gain, juce::jlimit(0.0, 1.0, (beat - startBeat) / fadeInBeats));
+
+    if (fadeOutBeats > 0.0)
+        gain = juce::jmin(gain, juce::jlimit(0.0, 1.0, (endBeat - beat) / fadeOutBeats));
+
+    return static_cast<float>(gain);
+}
 }
 
 void TrackProcessingGraph::configureFromProject(const Project& project)
 {
     tracks.clear();
     tracks.reserve(project.getTracks().size());
+
+    juce::AudioFormatManager formatManager;
+    formatManager.registerBasicFormats();
 
     for (size_t index = 0; index < project.getTracks().size(); ++index)
     {
@@ -86,6 +102,39 @@ void TrackProcessingGraph::configureFromProject(const Project& project)
                             note.velocity });
                     }
                 }
+            }
+        }
+        else if (track.type == TrackType::audio)
+        {
+            for (const auto& clip : track.clips)
+            {
+                if (clip.audioFilePath.isEmpty())
+                    continue;
+
+                auto reader = std::unique_ptr<juce::AudioFormatReader>(
+                    formatManager.createReaderFor(juce::File(clip.audioFilePath)));
+                if (reader == nullptr)
+                    continue;
+
+                TrackProcessor::AudioRegion region;
+                region.startBeat = clip.startBeat;
+                region.endBeat = clip.startBeat + clip.lengthBeats;
+                region.sourceStartSeconds = clip.sourceStartSeconds;
+                region.gain = clip.clipGain;
+                region.fadeInBeats = clip.fadeInBeats;
+                region.fadeOutBeats = clip.fadeOutBeats;
+                region.sampleRate = reader->sampleRate;
+                region.audio.setSize(static_cast<int>(reader->numChannels),
+                                     static_cast<int>(reader->lengthInSamples));
+
+                reader->read(&region.audio,
+                             0,
+                             region.audio.getNumSamples(),
+                             0,
+                             true,
+                             true);
+
+                processor.audioRegions.push_back(std::move(region));
             }
         }
 
@@ -164,6 +213,45 @@ void TrackProcessingGraph::render(juce::AudioBuffer<float>& output,
 
             for (int channel = 1; channel < trackScratch.getNumChannels(); ++channel)
                 trackScratch.copyFrom(channel, 0, trackScratch, 0, 0, numSamples);
+        }
+
+        if (! track.audioRegions.empty() && trackScratch.getNumChannels() > 0)
+        {
+            const auto secondsPerBeat = (beatsPerSample > 0.0 && currentSampleRate > 0.0)
+                                            ? 1.0 / (beatsPerSample * currentSampleRate)
+                                            : 0.5;
+
+            for (int sample = 0; sample < numSamples; ++sample)
+            {
+                const auto beat = startBeat + (static_cast<double>(sample) * beatsPerSample);
+
+                for (const auto& region : track.audioRegions)
+                {
+                    if (beat < region.startBeat || beat >= region.endBeat || region.sampleRate <= 0.0)
+                        continue;
+
+                    const auto localSeconds = (beat - region.startBeat) * secondsPerBeat;
+                    const auto sourceSeconds = region.sourceStartSeconds + localSeconds;
+                    const auto sourceSample = static_cast<int>(sourceSeconds * region.sampleRate);
+
+                    if (sourceSample < 0 || sourceSample >= region.audio.getNumSamples())
+                        continue;
+
+                    const auto fadeGain = fadeGainForBeat(beat,
+                                                          region.startBeat,
+                                                          region.endBeat,
+                                                          region.fadeInBeats,
+                                                          region.fadeOutBeats);
+                    for (int channel = 0; channel < trackScratch.getNumChannels(); ++channel)
+                    {
+                        const auto sourceChannel = juce::jmin(channel, region.audio.getNumChannels() - 1);
+                        auto* channelData = trackScratch.getWritePointer(channel);
+                        channelData[sample] += region.audio.getSample(sourceChannel, sourceSample)
+                                               * region.gain
+                                               * fadeGain;
+                    }
+                }
+            }
         }
 
         const auto clampedPan = juce::jlimit(-1.0f, 1.0f, track.pan);

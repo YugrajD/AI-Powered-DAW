@@ -3,6 +3,7 @@
 #include "../core/Project.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
+#include <juce_audio_formats/juce_audio_formats.h>
 
 #include <vector>
 
@@ -31,11 +32,24 @@ private:
             float velocity = 0.8f;
         };
 
+        struct AudioRegion
+        {
+            double startBeat = 0.0;
+            double endBeat = 0.0;
+            double sourceStartSeconds = 0.0;
+            float gain = 1.0f;
+            double fadeInBeats = 0.0;
+            double fadeOutBeats = 0.0;
+            double sampleRate = 0.0;
+            juce::AudioBuffer<float> audio;
+        };
+
         EntityId id = 0;
         InstrumentType instrument = InstrumentType::sineSynth;
         float gain = 1.0f;
         float pan = 0.0f;
         std::vector<SequencedNote> notes;
+        std::vector<AudioRegion> audioRegions;
         std::vector<EffectSlot> effects;
         float lowPassState = 0.0f;
         std::vector<float> effectLowPassState;
