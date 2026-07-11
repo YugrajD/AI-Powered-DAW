@@ -60,3 +60,20 @@ The AI command layer milestone adds JSON-based project mutation commands,
 validation/previews, command execution history, project summarization, an
 in-app command console, and an MCP-oriented tool manifest for agent-callable
 DAW operations.
+
+## Stage 9
+
+The LLM integration milestone adds a provider-agnostic agent boundary, a
+deterministic mock provider for offline demos/tests, OpenAI-compatible and
+Ollama request builders, an agent command service that turns model output into
+validated DAW mutations, and an in-app prompt path that exercises the full
+agent-to-command pipeline without requiring an API key.
+
+The current integration is deliberately split into two layers:
+
+- `ILLMProvider` owns model-specific command generation.
+- `AgentCommandService` owns project summarization, tool-manifest context,
+  preview, execution, and command-history recording.
+
+This keeps BYOK cloud providers and local model backends swappable while the
+DAW core stays testable and deterministic.
