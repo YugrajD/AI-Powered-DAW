@@ -294,6 +294,49 @@ MainComponent::MainComponent()
     };
     addAndMakeVisible(exportWavButton);
 
+    commandEditor.setMultiLine(true);
+    commandEditor.setReturnKeyStartsNewLine(true);
+    commandEditor.setText(R"({"type":"summarize_project"})", juce::dontSendNotification);
+    commandEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff121720 });
+    commandEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
+    commandEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffdce4f2 });
+    addAndMakeVisible(commandEditor);
+
+    previewCommandButton.onClick = [this]
+    {
+        const auto result = aidaw::CommandExecutor::previewJson(project, commandEditor.getText());
+        log.info(juce::String("Command preview: ") + (result.ok ? result.message : "Invalid: " + result.message));
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(previewCommandButton);
+
+    executeCommandButton.onClick = [this]
+    {
+        const auto result = aidaw::CommandExecutor::executeJson(project, commandEditor.getText(), commandHistory);
+        if (result.ok)
+        {
+            log.info("Command executed: " + result.message);
+            refreshProjectViews();
+        }
+        else
+        {
+            log.error("Command failed: " + result.message);
+        }
+
+        commandHistoryEditor.setText(commandHistory.toDisplayString(), juce::dontSendNotification);
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(executeCommandButton);
+
+    commandHistoryEditor.setMultiLine(true);
+    commandHistoryEditor.setReadOnly(true);
+    commandHistoryEditor.setScrollbarsShown(true);
+    commandHistoryEditor.setCaretVisible(false);
+    commandHistoryEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff10151d });
+    commandHistoryEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
+    commandHistoryEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffdce4f2 });
+    addAndMakeVisible(commandHistoryEditor);
+
     diagnosticsEditor.setMultiLine(true);
     diagnosticsEditor.setReadOnly(true);
     diagnosticsEditor.setScrollbarsShown(true);
@@ -374,7 +417,19 @@ void MainComponent::resized()
     bounds.removeFromTop(16);
     mixerPanel.setBounds(bounds.removeFromTop(170));
     bounds.removeFromTop(16);
-    diagnosticsEditor.setBounds(bounds.removeFromBottom(180));
+    auto lowerPane = bounds.removeFromBottom(220);
+    auto commandPane = lowerPane.removeFromLeft(520);
+    commandEditor.setBounds(commandPane.removeFromTop(112));
+    commandPane.removeFromTop(8);
+    auto commandButtons = commandPane.removeFromTop(30);
+    previewCommandButton.setBounds(commandButtons.removeFromLeft(150));
+    commandButtons.removeFromLeft(8);
+    executeCommandButton.setBounds(commandButtons.removeFromLeft(150));
+    commandPane.removeFromTop(8);
+    commandHistoryEditor.setBounds(commandPane);
+
+    lowerPane.removeFromLeft(16);
+    diagnosticsEditor.setBounds(lowerPane);
 }
 
 void MainComponent::timerCallback()

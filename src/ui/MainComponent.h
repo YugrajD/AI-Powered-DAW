@@ -2,6 +2,7 @@
 
 #include "../audio/AudioEngine.h"
 #include "../audio/OfflineRenderer.h"
+#include "../commands/CommandExecutor.h"
 #include "../core/DiagnosticLog.h"
 #include "../core/Project.h"
 #include "ArrangementView.h"
@@ -61,4 +62,9 @@ private:
     std::unique_ptr<juce::FileChooser> projectFileChooser;
     std::unique_ptr<juce::FileChooser> exportFileChooser;
     juce::File currentProjectFile;
+    aidaw::CommandHistory commandHistory;
+    juce::TextEditor commandEditor;
+    juce::TextButton previewCommandButton { "Preview Command" };
+    juce::TextButton executeCommandButton { "Execute Command" };
+    juce::TextEditor commandHistoryEditor;
 };
