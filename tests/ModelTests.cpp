@@ -30,6 +30,8 @@ aidaw::Project makeProject()
     track.gain = 0.75f;
     track.pan = -0.2f;
     project.addTrackEffect(track.id, aidaw::EffectType::saturation, 0.4f);
+    project.addAutomationPoint(track.id, aidaw::AutomationTarget::trackGain, 0.0, 0.25f);
+    project.addAutomationPoint(track.id, aidaw::AutomationTarget::trackGain, 4.0, 0.75f);
 
     auto& clip = project.createClip(track.id, "Bass Loop", 8.0, 4.0);
     clip.notes.push_back(aidaw::MidiNote { 36, 0.0, 0.5, 0.9f });
@@ -75,6 +77,9 @@ void testProjectSerializationRoundTrip()
     expect(restoredTrack.instrument == aidaw::InstrumentType::subtractiveSynth, "instrument round-trips");
     expect(restoredTrack.effects.size() == 1, "effect count round-trips");
     expect(restoredTrack.effects.front().type == aidaw::EffectType::saturation, "effect type round-trips");
+    expect(restoredTrack.automation.size() == 1, "automation lane count round-trips");
+    expect(restored.getAutomationValue(restoredTrack.id, aidaw::AutomationTarget::trackGain, 2.0, 1.0f) == 0.5f,
+           "automation interpolates after round-trip");
     expect(restoredTrack.clips.size() == 1, "clip count round-trips");
     expect(restoredTrack.clips.front().notes.size() == 2, "note count round-trips");
     expect(restoredTrack.clips.front().notes.front().pitch == 36, "note pitch round-trips");

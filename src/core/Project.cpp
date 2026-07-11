@@ -37,6 +37,78 @@ bool Project::addTrackEffect(EntityId trackId, EffectType effect, float amount)
     return true;
 }
 
+bool Project::addAutomationPoint(EntityId trackId, AutomationTarget target, double beat, float value)
+{
+    auto* track = findTrack(trackId);
+    if (track == nullptr)
+        return false;
+
+    auto lane = std::find_if(track->automation.begin(),
+                             track->automation.end(),
+                             [target](const AutomationLane& candidate)
+                             {
+                                 return candidate.target == target;
+                             });
+
+    if (lane == track->automation.end())
+    {
+        track->automation.push_back(AutomationLane { target, {} });
+        lane = std::prev(track->automation.end());
+    }
+
+    lane->points.push_back(AutomationPoint { juce::jmax(0.0, beat), value });
+    std::sort(lane->points.begin(),
+              lane->points.end(),
+              [](const AutomationPoint& left, const AutomationPoint& right)
+              {
+                  return left.beat < right.beat;
+              });
+    return true;
+}
+
+float Project::getAutomationValue(EntityId trackId,
+                                  AutomationTarget target,
+                                  double beat,
+                                  float fallback) const noexcept
+{
+    const auto* track = findTrack(trackId);
+    if (track == nullptr)
+        return fallback;
+
+    const auto lane = std::find_if(track->automation.begin(),
+                                   track->automation.end(),
+                                   [target](const AutomationLane& candidate)
+                                   {
+                                       return candidate.target == target;
+                                   });
+
+    if (lane == track->automation.end() || lane->points.empty())
+        return fallback;
+
+    if (beat <= lane->points.front().beat)
+        return lane->points.front().value;
+
+    if (beat >= lane->points.back().beat)
+        return lane->points.back().value;
+
+    for (size_t index = 1; index < lane->points.size(); ++index)
+    {
+        const auto& right = lane->points[index];
+        if (beat > right.beat)
+            continue;
+
+        const auto& left = lane->points[index - 1];
+        const auto span = right.beat - left.beat;
+        if (span <= 0.0)
+            return right.value;
+
+        const auto alpha = static_cast<float>((beat - left.beat) / span);
+        return left.value + ((right.value - left.value) * alpha);
+    }
+
+    return fallback;
+}
+
 Clip& Project::createClip(EntityId trackId, juce::String clipName, double startBeat, double lengthBeats)
 {
     auto* track = findTrack(trackId);

@@ -28,6 +28,24 @@ enum class EffectType
     saturation
 };
 
+enum class AutomationTarget
+{
+    trackGain,
+    trackPan
+};
+
+struct AutomationPoint
+{
+    double beat = 0.0;
+    float value = 0.0f;
+};
+
+struct AutomationLane
+{
+    AutomationTarget target = AutomationTarget::trackGain;
+    std::vector<AutomationPoint> points;
+};
+
 struct EffectSlot
 {
     EffectType type = EffectType::lowPass;
@@ -71,6 +89,7 @@ struct Track
     float pan = 0.0f;
     std::vector<Clip> clips;
     std::vector<EffectSlot> effects;
+    std::vector<AutomationLane> automation;
 };
 
 struct Transport
@@ -94,6 +113,11 @@ public:
     [[nodiscard]] Track& createTrack(TrackType type, juce::String trackName);
     void setTrackInstrument(EntityId trackId, InstrumentType instrument);
     bool addTrackEffect(EntityId trackId, EffectType effect, float amount);
+    bool addAutomationPoint(EntityId trackId, AutomationTarget target, double beat, float value);
+    [[nodiscard]] float getAutomationValue(EntityId trackId,
+                                           AutomationTarget target,
+                                           double beat,
+                                           float fallback) const noexcept;
     [[nodiscard]] Clip& createClip(EntityId trackId, juce::String clipName, double startBeat, double lengthBeats);
     [[nodiscard]] Clip& createAudioClip(EntityId trackId,
                                         juce::String clipName,

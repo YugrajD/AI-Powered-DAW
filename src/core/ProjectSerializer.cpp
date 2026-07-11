@@ -66,6 +66,16 @@ EffectType effectTypeFromString(const juce::String& value)
     return EffectType::lowPass;
 }
 
+juce::String automationTargetToString(AutomationTarget target)
+{
+    return target == AutomationTarget::trackPan ? "trackPan" : "trackGain";
+}
+
+AutomationTarget automationTargetFromString(const juce::String& value)
+{
+    return value == "trackPan" ? AutomationTarget::trackPan : AutomationTarget::trackGain;
+}
+
 juce::var noteToVar(const MidiNote& note)
 {
     auto object = new juce::DynamicObject();
@@ -128,6 +138,27 @@ juce::var trackToVar(const Track& track)
     }
 
     object->setProperty("effects", effects);
+
+    juce::Array<juce::var> automation;
+    for (const auto& lane : track.automation)
+    {
+        auto laneObject = new juce::DynamicObject();
+        laneObject->setProperty("target", automationTargetToString(lane.target));
+
+        juce::Array<juce::var> points;
+        for (const auto& point : lane.points)
+        {
+            auto pointObject = new juce::DynamicObject();
+            pointObject->setProperty("beat", point.beat);
+            pointObject->setProperty("value", point.value);
+            points.add(pointObject);
+        }
+
+        laneObject->setProperty("points", points);
+        automation.add(laneObject);
+    }
+
+    object->setProperty("automation", automation);
     return object;
 }
 
@@ -235,6 +266,29 @@ Project ProjectSerializer::fromJson(const juce::String& json)
                 effectTypeFromString(effectValue.getProperty("type", "lowPass").toString()),
                 static_cast<bool>(effectValue.getProperty("enabled", true)),
                 static_cast<float>(static_cast<double>(effectValue.getProperty("amount", 0.5))) });
+        }
+
+        const auto* automation = trackValue.getProperty("automation", juce::var {}).getArray();
+        if (automation == nullptr)
+            continue;
+
+        for (const auto& laneValue : *automation)
+        {
+            AutomationLane lane;
+            lane.target = automationTargetFromString(laneValue.getProperty("target", "trackGain").toString());
+
+            const auto* points = laneValue.getProperty("points", juce::var {}).getArray();
+            if (points != nullptr)
+            {
+                for (const auto& pointValue : *points)
+                {
+                    lane.points.push_back(AutomationPoint {
+                        static_cast<double>(pointValue.getProperty("beat", 0.0)),
+                        static_cast<float>(static_cast<double>(pointValue.getProperty("value", 0.0))) });
+                }
+            }
+
+            track.automation.push_back(std::move(lane));
         }
     }
 
