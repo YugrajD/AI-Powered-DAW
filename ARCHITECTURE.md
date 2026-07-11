@@ -61,6 +61,7 @@ Supported tool commands include:
 - `add_effect`
 - `add_automation_point`
 - `summarize_project`
+- `create_melancholy_indie_seed`
 
 The command layer also emits a tool manifest that an agent can use as a compact
 contract for project mutation.
@@ -87,6 +88,10 @@ Agent responses may be:
 Multi-step plans can reference earlier results with `"$lastId"` or
 `"$stepN.id"`. This lets a model create a track, create a clip on that track,
 and add notes to that clip in one prompt without knowing IDs ahead of time.
+
+For musical prompts, the agent can also use higher-level tools such as
+`create_melancholy_indie_seed`, which creates a coherent sketch directly:
+tempo, chord track, bass track, soft drum track, sparse lead track, and effects.
 
 ## Test Strategy
 

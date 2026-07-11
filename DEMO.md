@@ -48,6 +48,9 @@ For local AI, run Ollama and use:
 
 Use prompts that map cleanly to supported tools:
 
+- `Make a sad, dreamy indie song starter with soft drums, warm bass, wistful chords, and a simple lead.`
+- `Create a melancholy bedroom-pop sketch around 82 BPM.`
+- `Make a laid-back rainy-day indie loop with warm chords and a sparse lead.`
 - `Create a MIDI bass track with a four beat clip and simple root-fifth notes.`
 - `Add a delay effect to the first track.`
 - `Create a lead MIDI track and add a one bar phrase.`
@@ -55,6 +58,20 @@ Use prompts that map cleanly to supported tools:
 - `Add a gain automation point on the first track at beat 4.`
 
 ## Example Command Plan
+
+For sad/dreamy indie material, the preferred high-level command is:
+
+```json
+{
+  "type": "create_melancholy_indie_seed",
+  "name": "Rainy Window",
+  "bpm": 82,
+  "startBeat": 0,
+  "lengthBeats": 16
+}
+```
+
+Lower-level plans still work when you want exact control:
 
 ```json
 {

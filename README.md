@@ -16,6 +16,8 @@ A compact AI-assisted digital audio workstation built in modern C++.
 - Provider-agnostic agent integration with deterministic mock mode,
   OpenAI-compatible BYOK endpoints, Ollama/Gemma local model support, and
   multi-step command planning.
+- High-level musical seed tools for generating melancholy indie/dream-pop song
+  starters with chords, bass, soft drums, lead notes, and effects.
 - Deterministic tests for project serialization, audio rendering, automation,
   provider parsing, command execution, and agent plans.
 
@@ -153,3 +155,11 @@ notes to that clip without the model knowing project IDs in advance.
 The portfolio readiness milestone adds architecture documentation, a demo guide,
 resume bullets, build/test instructions, and final app polish so the project is
 easy to review, run, and explain.
+
+## Stage 13
+
+The musical tools milestone adds a higher-level `create_melancholy_indie_seed`
+command for generating sad, dreamy indie song starters. The tool creates a slow
+four-track sketch with wistful chords, warm bass, soft drums, sparse lead notes,
+built-in effects, and a laid-back tempo, giving the agent a musical operation
+instead of forcing it to assemble every note manually.
