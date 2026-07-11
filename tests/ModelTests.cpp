@@ -1,4 +1,5 @@
 #include "core/Project.h"
+#include "core/ProjectFileService.h"
 #include "core/ProjectSerializer.h"
 #include "audio/TrackProcessingGraph.h"
 
@@ -89,6 +90,27 @@ void testProjectSerializationRoundTrip()
     expect(restoredAudioTrack.clips.front().audioFilePath.endsWith("break.wav"), "audio file path round-trips");
     expect(restoredAudioTrack.clips.front().clipGain == 0.65f, "audio clip gain round-trips");
     expect(restoredAudioTrack.clips.front().fadeOutBeats == 0.5, "audio clip fade round-trips");
+}
+
+void testProjectFileService()
+{
+    auto source = makeProject();
+    const auto directory = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                               .getChildFile("aidaw_project_service_test");
+    directory.createDirectory();
+    const auto file = directory.getChildFile("service-test.aidaw");
+    file.deleteFile();
+
+    juce::String error;
+    expect(aidaw::ProjectFileService::saveProject(source, file, &error), "project file saves");
+    expect(file.existsAsFile(), "project file exists after save");
+
+    aidaw::Project restored;
+    expect(aidaw::ProjectFileService::loadProject(file, restored, &error), "project file loads");
+    expect(restored.getName() == source.getName(), "loaded project name matches");
+
+    expect(aidaw::ProjectFileService::saveBackup(restored, file, &error), "project backup saves");
+    expect(file.getParentDirectory().getChildFile("Backups").isDirectory(), "backup directory exists");
 }
 
 void testMidiClipEditingHelpers()
@@ -269,6 +291,7 @@ int main()
 {
     testProjectModel();
     testProjectSerializationRoundTrip();
+    testProjectFileService();
     testMidiClipEditingHelpers();
     testTrackProcessingGraphGainPan();
     testTrackProcessingGraphInstrumentModes();

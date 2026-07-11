@@ -14,6 +14,8 @@ target_sources(AIPoweredDAW
         core/DiagnosticLog.h
         core/Project.cpp
         core/Project.h
+        core/ProjectFileService.cpp
+        core/ProjectFileService.h
         core/ProjectSerializer.cpp
         core/ProjectSerializer.h
         Main.cpp

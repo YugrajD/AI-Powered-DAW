@@ -2,6 +2,7 @@ add_executable(AIPoweredDAWTests
     ModelTests.cpp
     ../src/audio/TrackProcessingGraph.cpp
     ../src/core/Project.cpp
+    ../src/core/ProjectFileService.cpp
     ../src/core/ProjectSerializer.cpp)
 
 target_include_directories(AIPoweredDAWTests
