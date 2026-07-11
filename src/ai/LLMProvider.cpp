@@ -8,7 +8,8 @@ juce::String systemPrompt()
 {
     return "You are an AI coproducer inside a DAW. Return only JSON, with no prose. "
            "For one action, return one command object matching the provided tool manifest. "
-           "For multiple actions, return {\"commands\":[...]} and use \"$step1.id\" or \"$lastId\" to reference IDs created by earlier commands.";
+           "For multiple actions, return {\"commands\":[...]} and use \"$step1.id\" or \"$lastId\" to reference IDs created by earlier commands. "
+           "For requests about sad, melancholy, dreamy, or laid-back indie songs, prefer create_melancholy_indie_seed.";
 }
 
 juce::String combinedPrompt(const LLMRequest& request)

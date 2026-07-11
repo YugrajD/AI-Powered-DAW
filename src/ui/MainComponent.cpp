@@ -356,7 +356,7 @@ MainComponent::MainComponent()
 
     agentPromptEditor.setMultiLine(true);
     agentPromptEditor.setReturnKeyStartsNewLine(true);
-    agentPromptEditor.setText("Add a tight MIDI bass track", juce::dontSendNotification);
+    agentPromptEditor.setText("Make a sad, dreamy indie song starter with soft drums, warm bass, wistful chords, and a simple lead.", juce::dontSendNotification);
     agentPromptEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff121720 });
     agentPromptEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
     agentPromptEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffdce4f2 });
@@ -384,7 +384,7 @@ MainComponent::MainComponent()
         {
             providerConfig.kind = aidaw::LLMProviderKind::mock;
             provider = std::make_unique<aidaw::MockLLMProvider>(
-                R"({"commands":[{"type":"create_track","trackType":"midi","name":"AI Bass"},{"type":"create_midi_clip","trackId":"$step1.id","name":"Generated Bass","startBeat":0,"lengthBeats":4},{"type":"add_midi_notes","trackId":"$step1.id","clipId":"$step2.id","notes":[{"pitch":36,"startBeat":0,"lengthBeats":0.5,"velocity":0.95},{"pitch":43,"startBeat":1,"lengthBeats":0.5,"velocity":0.85},{"pitch":48,"startBeat":2,"lengthBeats":0.5,"velocity":0.9},{"pitch":43,"startBeat":3,"lengthBeats":0.5,"velocity":0.85}]}]})");
+                R"({"type":"create_melancholy_indie_seed","name":"Rainy Window","bpm":82,"startBeat":0,"lengthBeats":16})");
         }
 
         const auto result = aidaw::AgentCommandService::run(project, agentPromptEditor.getText(), *provider, commandHistory);
