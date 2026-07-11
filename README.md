@@ -53,3 +53,10 @@ The project system and export milestone adds `.aidaw` project save/load,
 timestamped backup writes, offline WAV rendering through the track graph,
 Save/Load/Export controls, and tests for project persistence and render
 output.
+
+## Stage 8
+
+The AI command layer milestone adds JSON-based project mutation commands,
+validation/previews, command execution history, project summarization, an
+in-app command console, and an MCP-oriented tool manifest for agent-callable
+DAW operations.
