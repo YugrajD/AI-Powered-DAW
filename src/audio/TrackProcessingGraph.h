@@ -48,6 +48,8 @@ private:
         InstrumentType instrument = InstrumentType::sineSynth;
         float gain = 1.0f;
         float pan = 0.0f;
+        std::vector<AutomationPoint> gainAutomation;
+        std::vector<AutomationPoint> panAutomation;
         std::vector<SequencedNote> notes;
         std::vector<AudioRegion> audioRegions;
         std::vector<EffectSlot> effects;

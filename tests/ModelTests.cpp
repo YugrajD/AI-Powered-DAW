@@ -239,6 +239,30 @@ void testTrackProcessingGraphAudioClipRender()
 
     wavFile.deleteFile();
 }
+
+void testTrackProcessingGraphAutomation()
+{
+    aidaw::Project project;
+    auto& track = project.createTrack(aidaw::TrackType::midi, "Automated");
+    track.gain = 0.0f;
+    project.addAutomationPoint(track.id, aidaw::AutomationTarget::trackGain, 0.0, 0.0f);
+    project.addAutomationPoint(track.id, aidaw::AutomationTarget::trackGain, 4.0, 1.0f);
+
+    auto& clip = project.createClip(track.id, "Tone", 0.0, 4.0);
+    [[maybe_unused]] auto& note = project.addMidiNote(track.id, clip.id, 48, 0.0, 4.0, 1.0f);
+
+    aidaw::TrackProcessingGraph graph;
+    graph.configureFromProject(project);
+    graph.prepare(44100.0, 512, 2);
+
+    juce::AudioBuffer<float> early(2, 512);
+    graph.render(early, early.getNumSamples(), 0.0, 120.0 / 60.0 / 44100.0);
+
+    juce::AudioBuffer<float> late(2, 512);
+    graph.render(late, late.getNumSamples(), 3.0, 120.0 / 60.0 / 44100.0);
+
+    expect(channelAbsSum(late, 0) > channelAbsSum(early, 0), "gain automation increases rendered level");
+}
 }
 
 int main()
@@ -250,6 +274,7 @@ int main()
     testTrackProcessingGraphInstrumentModes();
     testTrackProcessingGraphEffects();
     testTrackProcessingGraphAudioClipRender();
+    testTrackProcessingGraphAutomation();
 
     if (failures != 0)
         return 1;

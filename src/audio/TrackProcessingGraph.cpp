@@ -56,6 +56,35 @@ float fadeGainForBeat(double beat, double startBeat, double endBeat, double fade
 
     return static_cast<float>(gain);
 }
+
+float automationValueAt(const std::vector<AutomationPoint>& points, double beat, float fallback) noexcept
+{
+    if (points.empty())
+        return fallback;
+
+    if (beat <= points.front().beat)
+        return points.front().value;
+
+    if (beat >= points.back().beat)
+        return points.back().value;
+
+    for (size_t index = 1; index < points.size(); ++index)
+    {
+        const auto& right = points[index];
+        if (beat > right.beat)
+            continue;
+
+        const auto& left = points[index - 1];
+        const auto span = right.beat - left.beat;
+        if (span <= 0.0)
+            return right.value;
+
+        const auto alpha = static_cast<float>((beat - left.beat) / span);
+        return left.value + ((right.value - left.value) * alpha);
+    }
+
+    return fallback;
+}
 }
 
 void TrackProcessingGraph::configureFromProject(const Project& project)
@@ -75,6 +104,14 @@ void TrackProcessingGraph::configureFromProject(const Project& project)
         processor.gain = track.gain;
         processor.pan = track.pan;
         processor.effects = track.effects;
+
+        for (const auto& lane : track.automation)
+        {
+            if (lane.target == AutomationTarget::trackGain)
+                processor.gainAutomation = lane.points;
+            else if (lane.target == AutomationTarget::trackPan)
+                processor.panAutomation = lane.points;
+        }
 
         if (track.type == TrackType::midi)
         {
@@ -254,21 +291,35 @@ void TrackProcessingGraph::render(juce::AudioBuffer<float>& output,
             }
         }
 
-        const auto clampedPan = juce::jlimit(-1.0f, 1.0f, track.pan);
-        const auto leftGain = track.gain * (clampedPan <= 0.0f ? 1.0f : 1.0f - clampedPan);
-        const auto rightGain = track.gain * (clampedPan >= 0.0f ? 1.0f : 1.0f + clampedPan);
-
-        if (trackScratch.getNumChannels() == 1)
+        if (trackScratch.getNumChannels() == 1 && track.gainAutomation.empty())
         {
             trackScratch.applyGain(0, 0, numSamples, track.gain);
         }
+        else if (trackScratch.getNumChannels() == 1)
+        {
+            auto* data = trackScratch.getWritePointer(0);
+            for (int sample = 0; sample < numSamples; ++sample)
+            {
+                const auto beat = startBeat + (static_cast<double>(sample) * beatsPerSample);
+                data[sample] *= automationValueAt(track.gainAutomation, beat, track.gain);
+            }
+        }
         else if (trackScratch.getNumChannels() >= 2)
         {
-            trackScratch.applyGain(0, 0, numSamples, leftGain);
-            trackScratch.applyGain(1, 0, numSamples, rightGain);
+            for (int sample = 0; sample < numSamples; ++sample)
+            {
+                const auto beat = startBeat + (static_cast<double>(sample) * beatsPerSample);
+                const auto automatedGain = automationValueAt(track.gainAutomation, beat, track.gain);
+                const auto clampedPan = juce::jlimit(-1.0f, 1.0f, automationValueAt(track.panAutomation, beat, track.pan));
+                const auto leftGain = automatedGain * (clampedPan <= 0.0f ? 1.0f : 1.0f - clampedPan);
+                const auto rightGain = automatedGain * (clampedPan >= 0.0f ? 1.0f : 1.0f + clampedPan);
 
-            for (int channel = 2; channel < trackScratch.getNumChannels(); ++channel)
-                trackScratch.applyGain(channel, 0, numSamples, track.gain);
+                trackScratch.getWritePointer(0)[sample] *= leftGain;
+                trackScratch.getWritePointer(1)[sample] *= rightGain;
+
+                for (int channel = 2; channel < trackScratch.getNumChannels(); ++channel)
+                    trackScratch.getWritePointer(channel)[sample] *= automatedGain;
+            }
         }
 
         for (const auto& effect : track.effects)
