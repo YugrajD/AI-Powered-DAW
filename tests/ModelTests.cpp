@@ -1,6 +1,7 @@
 #include "core/Project.h"
 #include "core/ProjectFileService.h"
 #include "core/ProjectSerializer.h"
+#include "ai/LLMProvider.h"
 #include "audio/OfflineRenderer.h"
 #include "audio/TrackProcessingGraph.h"
 #include "commands/CommandExecutor.h"
@@ -353,6 +354,26 @@ void testCommandExecutor()
     expect(history.entries().size() == 1, "command history records entry");
     expect(history.toDisplayString().contains("FAIL"), "command history display includes status");
 }
+
+void testLLMProviderRequestBuilders()
+{
+    aidaw::LLMRequest request;
+    request.userPrompt = "make a bassline";
+    request.projectSummary = "Tracks: 1";
+    request.toolManifestJson = aidaw::CommandExecutor::toolManifestJson();
+
+    aidaw::MockLLMProvider mock { R"({"type":"summarize_project"})" };
+    const auto mockResponse = mock.generateCommand(request);
+    expect(mockResponse.ok && mockResponse.commandJson.contains("summarize_project"), "mock LLM returns deterministic command");
+
+    const auto openAIJson = aidaw::OpenAICompatibleRequestBuilder::buildChatCompletionsJson("gpt-test", request);
+    expect(openAIJson.contains("\"messages\""), "OpenAI-compatible request includes messages");
+    expect(openAIJson.contains("make a bassline"), "OpenAI-compatible request includes user prompt");
+
+    const auto ollamaJson = aidaw::OllamaRequestBuilder::buildGenerateJson("llama-test", request);
+    expect(ollamaJson.contains("\"stream\": false"), "Ollama request disables streaming");
+    expect(ollamaJson.contains("Tracks: 1"), "Ollama request includes project summary");
+}
 }
 
 int main()
@@ -368,6 +389,7 @@ int main()
     testTrackProcessingGraphAutomation();
     testOfflineRenderer();
     testCommandExecutor();
+    testLLMProviderRequestBuilders();
 
     if (failures != 0)
         return 1;

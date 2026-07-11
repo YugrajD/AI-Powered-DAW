@@ -6,6 +6,8 @@ juce_add_gui_app(AIPoweredDAW
 
 target_sources(AIPoweredDAW
     PRIVATE
+        ai/LLMProvider.cpp
+        ai/LLMProvider.h
         audio/AudioEngine.cpp
         audio/AudioEngine.h
         audio/OfflineRenderer.cpp
