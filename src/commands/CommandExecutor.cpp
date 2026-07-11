@@ -2,6 +2,34 @@
 
 namespace aidaw
 {
+void CommandHistory::record(juce::String commandJson, juce::String preview, CommandResult result)
+{
+    history.push_back(CommandHistoryEntry {
+        std::move(commandJson),
+        std::move(preview),
+        std::move(result),
+        juce::Time::getCurrentTime() });
+}
+
+juce::String CommandHistory::toDisplayString() const
+{
+    juce::String text;
+
+    for (const auto& entry : history)
+    {
+        text << entry.timestamp.formatted("%H:%M:%S")
+             << " "
+             << (entry.result.ok ? "OK" : "FAIL")
+             << " | "
+             << entry.preview
+             << " -> "
+             << entry.result.message
+             << "\n";
+    }
+
+    return text;
+}
+
 namespace
 {
 CommandResult fail(juce::String message)
@@ -200,6 +228,14 @@ CommandResult CommandExecutor::executeJson(Project& project, const juce::String&
         return ok("Project summarized", summarizeProject(project));
 
     return fail("Unknown command type");
+}
+
+CommandResult CommandExecutor::executeJson(Project& project, const juce::String& json, CommandHistory& history)
+{
+    const auto preview = previewJson(project, json);
+    auto result = preview.ok ? executeJson(project, json) : preview;
+    history.record(json, preview.message, result);
+    return result;
 }
 
 juce::String CommandExecutor::summarizeProject(const Project& project)

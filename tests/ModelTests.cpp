@@ -345,6 +345,12 @@ void testCommandExecutor()
 
     auto summary = aidaw::CommandExecutor::executeJson(project, R"({"type":"summarize_project"})");
     expect(summary.ok && summary.data.toString().contains("AI Bass"), "summarize_project returns track context");
+
+    aidaw::CommandHistory history;
+    auto badCommand = aidaw::CommandExecutor::executeJson(project, R"({"type":"add_midi_notes","trackId":999,"clipId":1,"notes":[]})", history);
+    expect(! badCommand.ok, "history command captures validation failure");
+    expect(history.entries().size() == 1, "command history records entry");
+    expect(history.toDisplayString().contains("FAIL"), "command history display includes status");
 }
 }
 
