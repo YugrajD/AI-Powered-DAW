@@ -39,3 +39,10 @@ The audio clips milestone adds audio clip metadata, WAV/AIFF import, clip
 gain/fade fields, audio file loading outside the realtime callback, audio
 clip playback through the track graph, waveform-style arrangement previews,
 and render-path coverage for imported audio clips.
+
+## Stage 6
+
+The mixer and automation milestone adds track automation lanes, gain/pan
+automation interpolation, automation-aware audio rendering, a mixer panel
+with per-track gain/pan controls, a clickable gain automation lane, and
+tests for automation playback behavior.
