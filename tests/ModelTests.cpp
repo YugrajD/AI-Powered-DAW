@@ -1,6 +1,7 @@
 #include "core/Project.h"
 #include "core/ProjectFileService.h"
 #include "core/ProjectSerializer.h"
+#include "audio/OfflineRenderer.h"
 #include "audio/TrackProcessingGraph.h"
 
 #include <iostream>
@@ -285,6 +286,29 @@ void testTrackProcessingGraphAutomation()
 
     expect(channelAbsSum(late, 0) > channelAbsSum(early, 0), "gain automation increases rendered level");
 }
+
+void testOfflineRenderer()
+{
+    aidaw::Project project;
+    project.getTransport().bpm = 120.0;
+    auto& track = project.createTrack(aidaw::TrackType::midi, "Render Tone");
+    auto& clip = project.createClip(track.id, "Tone", 0.0, 4.0);
+    [[maybe_unused]] auto& note = project.addMidiNote(track.id, clip.id, 48, 0.0, 4.0, 1.0f);
+
+    const auto file = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                          .getChildFile("aidaw_offline_render_test.wav");
+    file.deleteFile();
+
+    aidaw::OfflineRenderer::Options options;
+    options.lengthBeats = 1.0;
+    options.blockSize = 256;
+
+    juce::String error;
+    expect(aidaw::OfflineRenderer::renderToWav(project, file, options, &error), "offline render succeeds");
+    expect(file.existsAsFile(), "offline render file exists");
+    expect(file.getSize() > 1000, "offline render file has audio data");
+    file.deleteFile();
+}
 }
 
 int main()
@@ -298,6 +322,7 @@ int main()
     testTrackProcessingGraphEffects();
     testTrackProcessingGraphAudioClipRender();
     testTrackProcessingGraphAutomation();
+    testOfflineRenderer();
 
     if (failures != 0)
         return 1;

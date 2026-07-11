@@ -8,6 +8,8 @@ target_sources(AIPoweredDAW
     PRIVATE
         audio/AudioEngine.cpp
         audio/AudioEngine.h
+        audio/OfflineRenderer.cpp
+        audio/OfflineRenderer.h
         audio/TrackProcessingGraph.cpp
         audio/TrackProcessingGraph.h
         core/DiagnosticLog.cpp
