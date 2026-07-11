@@ -23,6 +23,28 @@ void expect(bool condition, std::string_view message)
     std::cerr << "FAIL: " << message << '\n';
 }
 
+class FakeHttpTransport final : public aidaw::IHttpTransport
+{
+public:
+    explicit FakeHttpTransport(juce::String responseBodyToReturn)
+        : responseBody(std::move(responseBodyToReturn))
+    {
+    }
+
+    aidaw::HttpResponse send(const aidaw::HttpRequest& request) override
+    {
+        lastRequest = request;
+        return aidaw::HttpResponse { statusCode, responseBody, error };
+    }
+
+    aidaw::HttpRequest lastRequest;
+    int statusCode = 200;
+    juce::String error;
+
+private:
+    juce::String responseBody;
+};
+
 aidaw::Project makeProject()
 {
     aidaw::Project project;
@@ -374,6 +396,51 @@ void testLLMProviderRequestBuilders()
     const auto ollamaJson = aidaw::OllamaRequestBuilder::buildGenerateJson("llama-test", request);
     expect(ollamaJson.contains("\"stream\": false"), "Ollama request disables streaming");
     expect(ollamaJson.contains("Tracks: 1"), "Ollama request includes project summary");
+
+    const auto parsedOpenAI = aidaw::OpenAICompatibleProvider::parseResponse(
+        R"({"choices":[{"message":{"content":"{\"type\":\"summarize_project\"}"}}]})");
+    expect(parsedOpenAI.ok && parsedOpenAI.commandJson.contains("summarize_project"), "OpenAI-compatible parser extracts command JSON");
+
+    const auto parsedOllama = aidaw::OllamaProvider::parseResponse(
+        R"({"response":"```json\n{\"type\":\"summarize_project\"}\n```"})");
+    expect(parsedOllama.ok && parsedOllama.commandJson.contains("summarize_project"), "Ollama parser extracts fenced command JSON");
+}
+
+void testConcreteLLMProviders()
+{
+    aidaw::LLMRequest request;
+    request.userPrompt = "make a lead";
+    request.projectSummary = "Tracks: 0";
+    request.toolManifestJson = aidaw::CommandExecutor::toolManifestJson();
+
+    aidaw::LLMProviderConfig openAIConfig;
+    openAIConfig.kind = aidaw::LLMProviderKind::openAICompatible;
+    openAIConfig.endpoint = "https://example.test/v1/chat/completions";
+    openAIConfig.model = "gpt-test";
+    openAIConfig.apiKey = "test-key";
+
+    FakeHttpTransport openAITransport {
+        R"({"choices":[{"message":{"content":"{\"type\":\"create_track\",\"trackType\":\"midi\",\"name\":\"Lead\"}"}}]})"
+    };
+    aidaw::OpenAICompatibleProvider openAIProvider { openAIConfig, openAITransport };
+    const auto openAIResponse = openAIProvider.generateCommand(request);
+    expect(openAIResponse.ok && openAIResponse.commandJson.contains("create_track"), "OpenAI-compatible provider returns command JSON");
+    expect(openAITransport.lastRequest.url == openAIConfig.endpoint, "OpenAI-compatible provider uses configured endpoint");
+    expect(openAITransport.lastRequest.headers.contains("Authorization: Bearer test-key"), "OpenAI-compatible provider sends bearer key");
+
+    aidaw::LLMProviderConfig ollamaConfig;
+    ollamaConfig.kind = aidaw::LLMProviderKind::ollama;
+    ollamaConfig.endpoint = "http://127.0.0.1:11434/api/generate";
+    ollamaConfig.model = "llama3.1";
+
+    FakeHttpTransport ollamaTransport {
+        R"({"response":"{\"type\":\"summarize_project\"}"})"
+    };
+    aidaw::OllamaProvider ollamaProvider { ollamaConfig, ollamaTransport };
+    const auto ollamaResponse = ollamaProvider.generateCommand(request);
+    expect(ollamaResponse.ok && ollamaResponse.commandJson.contains("summarize_project"), "Ollama provider returns command JSON");
+    expect(ollamaTransport.lastRequest.url == ollamaConfig.endpoint, "Ollama provider uses configured endpoint");
+    expect(ollamaTransport.lastRequest.body.contains("llama3.1"), "Ollama provider sends configured model");
 }
 
 void testAgentCommandService()
@@ -406,6 +473,7 @@ int main()
     testOfflineRenderer();
     testCommandExecutor();
     testLLMProviderRequestBuilders();
+    testConcreteLLMProviders();
     testAgentCommandService();
 
     if (failures != 0)

@@ -18,6 +18,51 @@ struct LLMResponse
     juce::String error;
 };
 
+enum class LLMProviderKind
+{
+    mock,
+    openAICompatible,
+    ollama
+};
+
+struct LLMProviderConfig
+{
+    LLMProviderKind kind = LLMProviderKind::mock;
+    juce::String endpoint;
+    juce::String model;
+    juce::String apiKey;
+    int timeoutMs = 30000;
+};
+
+struct HttpRequest
+{
+    juce::String url;
+    juce::String method = "POST";
+    juce::String headers;
+    juce::String body;
+    int timeoutMs = 30000;
+};
+
+struct HttpResponse
+{
+    int statusCode = 0;
+    juce::String body;
+    juce::String error;
+};
+
+class IHttpTransport
+{
+public:
+    virtual ~IHttpTransport() = default;
+    [[nodiscard]] virtual HttpResponse send(const HttpRequest& request) = 0;
+};
+
+class JuceHttpTransport final : public IHttpTransport
+{
+public:
+    [[nodiscard]] HttpResponse send(const HttpRequest& request) override;
+};
+
 class ILLMProvider
 {
 public:
@@ -34,6 +79,32 @@ public:
 
 private:
     juce::String commandJson;
+};
+
+class OpenAICompatibleProvider final : public ILLMProvider
+{
+public:
+    OpenAICompatibleProvider(LLMProviderConfig config, IHttpTransport& transport);
+
+    [[nodiscard]] LLMResponse generateCommand(const LLMRequest& request) override;
+    [[nodiscard]] static LLMResponse parseResponse(const juce::String& responseBody);
+
+private:
+    LLMProviderConfig config;
+    IHttpTransport& transport;
+};
+
+class OllamaProvider final : public ILLMProvider
+{
+public:
+    OllamaProvider(LLMProviderConfig config, IHttpTransport& transport);
+
+    [[nodiscard]] LLMResponse generateCommand(const LLMRequest& request) override;
+    [[nodiscard]] static LLMResponse parseResponse(const juce::String& responseBody);
+
+private:
+    LLMProviderConfig config;
+    IHttpTransport& transport;
 };
 
 class OpenAICompatibleRequestBuilder
