@@ -6,7 +6,9 @@ namespace
 {
 juce::String systemPrompt()
 {
-    return "You are an AI coproducer inside a DAW. Return exactly one JSON command matching the provided tool manifest. Do not return prose.";
+    return "You are an AI coproducer inside a DAW. Return only JSON, with no prose. "
+           "For one action, return one command object matching the provided tool manifest. "
+           "For multiple actions, return {\"commands\":[...]} and use \"$step1.id\" or \"$lastId\" to reference IDs created by earlier commands.";
 }
 
 juce::String combinedPrompt(const LLMRequest& request)

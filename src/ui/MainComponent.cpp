@@ -384,7 +384,7 @@ MainComponent::MainComponent()
         {
             providerConfig.kind = aidaw::LLMProviderKind::mock;
             provider = std::make_unique<aidaw::MockLLMProvider>(
-                R"({"type":"create_track","trackType":"midi","name":"AI Bass"})");
+                R"({"commands":[{"type":"create_track","trackType":"midi","name":"AI Bass"},{"type":"create_midi_clip","trackId":"$step1.id","name":"Generated Bass","startBeat":0,"lengthBeats":4},{"type":"add_midi_notes","trackId":"$step1.id","clipId":"$step2.id","notes":[{"pitch":36,"startBeat":0,"lengthBeats":0.5,"velocity":0.95},{"pitch":43,"startBeat":1,"lengthBeats":0.5,"velocity":0.85},{"pitch":48,"startBeat":2,"lengthBeats":0.5,"velocity":0.9},{"pitch":43,"startBeat":3,"lengthBeats":0.5,"velocity":0.85}]}]})");
         }
 
         const auto result = aidaw::AgentCommandService::run(project, agentPromptEditor.getText(), *provider, commandHistory);
@@ -392,7 +392,7 @@ MainComponent::MainComponent()
 
         if (result.ok)
         {
-            log.info("Agent executed: " + result.execution.message);
+            log.info("Agent executed " + juce::String(static_cast<int>(result.stepResults.size())) + " step(s): " + result.execution.message);
             refreshProjectViews();
         }
         else
