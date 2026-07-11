@@ -3,6 +3,7 @@
 #include "core/ProjectSerializer.h"
 #include "audio/OfflineRenderer.h"
 #include "audio/TrackProcessingGraph.h"
+#include "commands/CommandExecutor.h"
 
 #include <iostream>
 #include <string_view>
@@ -309,6 +310,42 @@ void testOfflineRenderer()
     expect(file.getSize() > 1000, "offline render file has audio data");
     file.deleteFile();
 }
+
+void testCommandExecutor()
+{
+    aidaw::Project project;
+
+    auto createTrack = aidaw::CommandExecutor::executeJson(project, R"({"type":"create_track","trackType":"midi","name":"AI Bass"})");
+    expect(createTrack.ok, "create_track command succeeds");
+    const auto trackId = static_cast<int>(createTrack.data.getProperty("id", 0));
+
+    auto createClip = aidaw::CommandExecutor::executeJson(
+        project,
+        "{\"type\":\"create_midi_clip\",\"trackId\":" + juce::String(trackId) + ",\"name\":\"AI Clip\",\"startBeat\":0,\"lengthBeats\":4}");
+    expect(createClip.ok, "create_midi_clip command succeeds");
+    const auto clipId = static_cast<int>(createClip.data.getProperty("id", 0));
+
+    auto addNotes = aidaw::CommandExecutor::executeJson(
+        project,
+        "{\"type\":\"add_midi_notes\",\"trackId\":"
+            + juce::String(trackId)
+            + ",\"clipId\":"
+            + juce::String(clipId)
+            + ",\"notes\":[{\"pitch\":48,\"startBeat\":0,\"lengthBeats\":1,\"velocity\":0.9}]}");
+    expect(addNotes.ok, "add_midi_notes command succeeds");
+
+    auto setGain = aidaw::CommandExecutor::executeJson(
+        project,
+        "{\"type\":\"set_track_gain\",\"trackId\":" + juce::String(trackId) + ",\"gain\":0.5}");
+    expect(setGain.ok, "set_track_gain command succeeds");
+
+    const auto* track = project.findTrack(trackId);
+    expect(track != nullptr && track->gain == 0.5f, "command mutates track gain");
+    expect(project.findClip(trackId, clipId)->notes.size() == 1, "command adds MIDI note");
+
+    auto summary = aidaw::CommandExecutor::executeJson(project, R"({"type":"summarize_project"})");
+    expect(summary.ok && summary.data.toString().contains("AI Bass"), "summarize_project returns track context");
+}
 }
 
 int main()
@@ -323,6 +360,7 @@ int main()
     testTrackProcessingGraphAudioClipRender();
     testTrackProcessingGraphAutomation();
     testOfflineRenderer();
+    testCommandExecutor();
 
     if (failures != 0)
         return 1;

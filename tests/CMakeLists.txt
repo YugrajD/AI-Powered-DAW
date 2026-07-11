@@ -2,6 +2,7 @@ add_executable(AIPoweredDAWTests
     ModelTests.cpp
     ../src/audio/OfflineRenderer.cpp
     ../src/audio/TrackProcessingGraph.cpp
+    ../src/commands/CommandExecutor.cpp
     ../src/core/Project.cpp
     ../src/core/ProjectFileService.cpp
     ../src/core/ProjectSerializer.cpp)

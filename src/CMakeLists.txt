@@ -12,6 +12,8 @@ target_sources(AIPoweredDAW
         audio/OfflineRenderer.h
         audio/TrackProcessingGraph.cpp
         audio/TrackProcessingGraph.h
+        commands/CommandExecutor.cpp
+        commands/CommandExecutor.h
         core/DiagnosticLog.cpp
         core/DiagnosticLog.h
         core/Project.cpp
