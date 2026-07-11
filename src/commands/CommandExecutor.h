@@ -37,5 +37,6 @@ public:
     [[nodiscard]] static CommandResult executeJson(Project& project, const juce::String& json);
     [[nodiscard]] static CommandResult executeJson(Project& project, const juce::String& json, CommandHistory& history);
     [[nodiscard]] static juce::String summarizeProject(const Project& project);
+    [[nodiscard]] static juce::String toolManifestJson();
 };
 }

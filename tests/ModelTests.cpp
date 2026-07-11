@@ -345,6 +345,7 @@ void testCommandExecutor()
 
     auto summary = aidaw::CommandExecutor::executeJson(project, R"({"type":"summarize_project"})");
     expect(summary.ok && summary.data.toString().contains("AI Bass"), "summarize_project returns track context");
+    expect(aidaw::CommandExecutor::toolManifestJson().contains("create_track"), "tool manifest lists command tools");
 
     aidaw::CommandHistory history;
     auto badCommand = aidaw::CommandExecutor::executeJson(project, R"({"type":"add_midi_notes","trackId":999,"clipId":1,"notes":[]})", history);

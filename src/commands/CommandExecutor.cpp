@@ -257,4 +257,46 @@ juce::String CommandExecutor::summarizeProject(const Project& project)
 
     return summary;
 }
+
+juce::String CommandExecutor::toolManifestJson()
+{
+    auto root = new juce::DynamicObject();
+    root->setProperty("name", "ai_powered_daw");
+    root->setProperty("description", "Agent-callable DAW project mutation tools");
+
+    juce::Array<juce::var> tools;
+    const auto addTool = [&tools](const juce::String& name, const juce::String& description, const juce::String& schema)
+    {
+        auto tool = new juce::DynamicObject();
+        tool->setProperty("name", name);
+        tool->setProperty("description", description);
+        tool->setProperty("inputSchema", juce::JSON::parse(schema));
+        tools.add(tool);
+    };
+
+    addTool("create_track",
+            "Create a MIDI or audio track",
+            R"({"type":"object","required":["type","trackType","name"],"properties":{"type":{"const":"create_track"},"trackType":{"enum":["midi","audio"]},"name":{"type":"string"}}})");
+    addTool("create_midi_clip",
+            "Create a MIDI clip on a MIDI track",
+            R"({"type":"object","required":["type","trackId","name","startBeat","lengthBeats"],"properties":{"type":{"const":"create_midi_clip"},"trackId":{"type":"integer"},"name":{"type":"string"},"startBeat":{"type":"number"},"lengthBeats":{"type":"number"}}})");
+    addTool("add_midi_notes",
+            "Add notes to an existing MIDI clip",
+            R"({"type":"object","required":["type","trackId","clipId","notes"],"properties":{"type":{"const":"add_midi_notes"},"trackId":{"type":"integer"},"clipId":{"type":"integer"},"notes":{"type":"array","items":{"type":"object","required":["pitch","startBeat","lengthBeats","velocity"]}}}})");
+    addTool("set_track_gain",
+            "Set track gain from 0.0 to 1.25",
+            R"({"type":"object","required":["type","trackId","gain"],"properties":{"type":{"const":"set_track_gain"},"trackId":{"type":"integer"},"gain":{"type":"number"}}})");
+    addTool("add_effect",
+            "Add a built-in effect to a track",
+            R"({"type":"object","required":["type","trackId","effect","amount"],"properties":{"type":{"const":"add_effect"},"trackId":{"type":"integer"},"effect":{"enum":["lowPass","saturation","delay"]},"amount":{"type":"number"}}})");
+    addTool("add_automation_point",
+            "Add a track gain or pan automation point",
+            R"({"type":"object","required":["type","trackId","target","beat","value"],"properties":{"type":{"const":"add_automation_point"},"trackId":{"type":"integer"},"target":{"enum":["trackGain","trackPan"]},"beat":{"type":"number"},"value":{"type":"number"}}})");
+    addTool("summarize_project",
+            "Return a compact text summary of the current project",
+            R"({"type":"object","required":["type"],"properties":{"type":{"const":"summarize_project"}}})");
+
+    root->setProperty("tools", tools);
+    return juce::JSON::toString(root, true);
+}
 }
