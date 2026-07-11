@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../audio/AudioEngine.h"
+#include "../audio/OfflineRenderer.h"
 #include "../core/DiagnosticLog.h"
 #include "../core/Project.h"
 #include "ArrangementView.h"
@@ -27,6 +28,7 @@ private:
     void refreshStatus();
     void refreshDiagnostics();
     void refreshDeviceControls();
+    void refreshProjectViews();
 
     aidaw::Project project;
     aidaw::DiagnosticLog log;
@@ -51,6 +53,12 @@ private:
     juce::TextButton addSaturationButton { "Saturate" };
     juce::TextButton addDelayButton { "Delay" };
     juce::TextButton importAudioButton { "Import Audio" };
+    juce::TextButton saveProjectButton { "Save" };
+    juce::TextButton loadProjectButton { "Load" };
+    juce::TextButton exportWavButton { "Export WAV" };
     juce::TextEditor diagnosticsEditor;
     std::unique_ptr<juce::FileChooser> audioFileChooser;
+    std::unique_ptr<juce::FileChooser> projectFileChooser;
+    std::unique_ptr<juce::FileChooser> exportFileChooser;
+    juce::File currentProjectFile;
 };

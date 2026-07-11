@@ -1,5 +1,6 @@
 #include "MainComponent.h"
 
+#include "../core/ProjectFileService.h"
 #include "../core/ProjectSerializer.h"
 
 MainComponent::MainComponent()
@@ -209,6 +210,90 @@ MainComponent::MainComponent()
     };
     addAndMakeVisible(importAudioButton);
 
+    saveProjectButton.onClick = [this]
+    {
+        projectFileChooser = std::make_unique<juce::FileChooser>(
+            "Save project",
+            currentProjectFile == juce::File {} ? juce::File::getSpecialLocation(juce::File::userDocumentsDirectory) : currentProjectFile,
+            "*.aidaw");
+
+        projectFileChooser->launchAsync(juce::FileBrowserComponent::saveMode
+                                            | juce::FileBrowserComponent::canSelectFiles,
+                                        [this](const juce::FileChooser& chooser)
+                                        {
+                                            const auto file = chooser.getResult();
+                                            juce::String error;
+                                            if (aidaw::ProjectFileService::saveProject(project, file, &error))
+                                            {
+                                                currentProjectFile = file.withFileExtension(".aidaw");
+                                                juce::ignoreUnused(aidaw::ProjectFileService::saveBackup(project, currentProjectFile, nullptr));
+                                                log.info("Saved project: " + currentProjectFile.getFileName());
+                                            }
+                                            else
+                                            {
+                                                log.error("Save failed: " + error);
+                                            }
+
+                                            refreshDiagnostics();
+                                        });
+    };
+    addAndMakeVisible(saveProjectButton);
+
+    loadProjectButton.onClick = [this]
+    {
+        projectFileChooser = std::make_unique<juce::FileChooser>(
+            "Load project",
+            currentProjectFile == juce::File {} ? juce::File::getSpecialLocation(juce::File::userDocumentsDirectory) : currentProjectFile,
+            "*.aidaw");
+
+        projectFileChooser->launchAsync(juce::FileBrowserComponent::openMode
+                                            | juce::FileBrowserComponent::canSelectFiles,
+                                        [this](const juce::FileChooser& chooser)
+                                        {
+                                            const auto file = chooser.getResult();
+                                            juce::String error;
+                                            if (aidaw::ProjectFileService::loadProject(file, project, &error))
+                                            {
+                                                currentProjectFile = file;
+                                                log.info("Loaded project: " + file.getFileName());
+                                                refreshProjectViews();
+                                            }
+                                            else
+                                            {
+                                                log.error("Load failed: " + error);
+                                            }
+
+                                            refreshDiagnostics();
+                                        });
+    };
+    addAndMakeVisible(loadProjectButton);
+
+    exportWavButton.onClick = [this]
+    {
+        exportFileChooser = std::make_unique<juce::FileChooser>(
+            "Export WAV",
+            juce::File::getSpecialLocation(juce::File::userMusicDirectory).getChildFile("AI Powered DAW Render.wav"),
+            "*.wav");
+
+        exportFileChooser->launchAsync(juce::FileBrowserComponent::saveMode
+                                           | juce::FileBrowserComponent::canSelectFiles,
+                                       [this](const juce::FileChooser& chooser)
+                                       {
+                                           const auto file = chooser.getResult();
+                                           aidaw::OfflineRenderer::Options options;
+                                           options.lengthBeats = 16.0;
+
+                                           juce::String error;
+                                           if (aidaw::OfflineRenderer::renderToWav(project, file, options, &error))
+                                               log.info("Exported WAV: " + file.withFileExtension(".wav").getFileName());
+                                           else
+                                               log.error("Export failed: " + error);
+
+                                           refreshDiagnostics();
+                                       });
+    };
+    addAndMakeVisible(exportWavButton);
+
     diagnosticsEditor.setMultiLine(true);
     diagnosticsEditor.setReadOnly(true);
     diagnosticsEditor.setScrollbarsShown(true);
@@ -270,6 +355,12 @@ void MainComponent::resized()
     addDelayButton.setBounds(editBounds.removeFromLeft(78));
     editBounds.removeFromLeft(12);
     importAudioButton.setBounds(editBounds.removeFromLeft(112));
+    editBounds.removeFromLeft(12);
+    saveProjectButton.setBounds(editBounds.removeFromLeft(62));
+    editBounds.removeFromLeft(8);
+    loadProjectButton.setBounds(editBounds.removeFromLeft(62));
+    editBounds.removeFromLeft(8);
+    exportWavButton.setBounds(editBounds.removeFromLeft(104));
 
     bounds.removeFromTop(16);
     auto workspace = bounds.removeFromTop(496);
@@ -332,4 +423,25 @@ void MainComponent::refreshDeviceControls()
 
         instrumentSelector.setSelectedId(selectedId, juce::dontSendNotification);
     }
+}
+
+void MainComponent::refreshProjectViews()
+{
+    const auto& tracks = project.getTracks();
+    if (! tracks.empty())
+    {
+        demoTrackId = tracks.front().id;
+        demoClipId = tracks.front().clips.empty() ? 0 : tracks.front().clips.front().id;
+    }
+
+    pianoRollView.setClip(demoTrackId, demoClipId);
+    automationLaneView.setTrack(demoTrackId);
+    inspectorPanel.setSelection(demoTrackId, demoClipId);
+    mixerPanel.refreshFromProject();
+    audioEngine.refreshProjectGraph();
+    refreshDeviceControls();
+    arrangementView.repaint();
+    pianoRollView.repaint();
+    automationLaneView.repaint();
+    inspectorPanel.repaint();
 }
