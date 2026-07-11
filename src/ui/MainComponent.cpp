@@ -532,7 +532,7 @@ void MainComponent::timerCallback()
 
 void MainComponent::refreshStatus()
 {
-    statusLabel.setText("Stage 1: "
+    statusLabel.setText("AI Powered DAW: "
                             + project.getName()
                             + " | "
                             + juce::String(project.getTracks().size())

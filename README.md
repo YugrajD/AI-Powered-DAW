@@ -2,6 +2,43 @@
 
 A compact AI-assisted digital audio workstation built in modern C++.
 
+## Highlights
+
+- C++20/JUCE desktop app with realtime audio playback and transport control.
+- Project model for MIDI/audio tracks, clips, notes, devices, automation, and
+  persistence.
+- Track processing graph with built-in synths, effects, gain/pan automation,
+  imported audio clips, and offline WAV export.
+- DAW UI with arrangement view, piano roll, automation lane, mixer, inspector,
+  command console, diagnostics, and agent panel.
+- JSON command layer with validation, previews, execution history, project
+  summarization, and an MCP-style tool manifest.
+- Provider-agnostic agent integration with deterministic mock mode,
+  OpenAI-compatible BYOK endpoints, Ollama/Gemma local model support, and
+  multi-step command planning.
+- Deterministic tests for project serialization, audio rendering, automation,
+  provider parsing, command execution, and agent plans.
+
+## Documentation
+
+- [Architecture](ARCHITECTURE.md): system boundaries and technical design.
+- [Demo Guide](DEMO.md): walkthrough script, prompts, command-plan example, and
+  resume bullets.
+
+## Build
+
+```powershell
+cmake -S . -B build-vs
+cmake --build build-vs --config Debug --target AIPoweredDAW
+```
+
+Run tests:
+
+```powershell
+cmake --build build-vs --config Debug --target AIPoweredDAWTests
+ctest --test-dir build-vs -C Debug --output-on-failure
+```
+
 ## Stage 0
 
 The first milestone establishes the project shell, core project model,
@@ -110,3 +147,9 @@ Plans can reference IDs created by earlier commands:
 
 That allows one prompt to create a track, create a clip on that track, and add
 notes to that clip without the model knowing project IDs in advance.
+
+## Stage 12
+
+The portfolio readiness milestone adds architecture documentation, a demo guide,
+resume bullets, build/test instructions, and final app polish so the project is
+easy to review, run, and explain.
