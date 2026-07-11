@@ -77,3 +77,22 @@ The current integration is deliberately split into two layers:
 
 This keeps BYOK cloud providers and local model backends swappable while the
 DAW core stays testable and deterministic.
+
+## Stage 10
+
+The provider runtime milestone adds concrete OpenAI-compatible and Ollama LLM
+providers, a JUCE-backed HTTP transport, response parsers that extract command
+JSON from model output, fake-transport tests for provider behavior, and in-app
+provider controls for switching between mock, BYOK cloud, and local model
+execution.
+
+Provider modes:
+
+- Mock: deterministic offline demo path that creates an `AI Bass` MIDI track.
+- OpenAI Compatible: POSTs a chat-completions request to the configured
+  endpoint with an optional bearer API key.
+- Ollama: POSTs a local `/api/generate` request to the configured endpoint.
+
+All providers are expected to return exactly one JSON command matching the tool
+manifest from Stage 8. The command is still previewed and validated before it
+mutates the project.
