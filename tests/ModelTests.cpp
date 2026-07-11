@@ -378,6 +378,27 @@ void testCommandExecutor()
     expect(history.toDisplayString().contains("FAIL"), "command history display includes status");
 }
 
+void testMusicalSeedCommand()
+{
+    aidaw::Project project;
+
+    const auto result = aidaw::CommandExecutor::executeJson(
+        project,
+        R"({"type":"create_melancholy_indie_seed","name":"Rainy Window","bpm":82,"startBeat":0,"lengthBeats":16})");
+
+    expect(result.ok, "melancholy indie seed command succeeds");
+    expect(project.getTransport().bpm == 82.0, "melancholy indie seed sets tempo");
+    expect(project.getTracks().size() == 4, "melancholy indie seed creates four tracks");
+    expect(project.getTracks()[0].clips.front().notes.size() == 12, "melancholy indie seed creates chord notes");
+    expect(project.getTracks()[1].clips.front().notes.size() == 8, "melancholy indie seed creates bass notes");
+    expect(project.getTracks()[2].clips.front().notes.size() == 24, "melancholy indie seed creates drum notes");
+    expect(project.getTracks()[3].clips.front().notes.size() == 9, "melancholy indie seed creates lead notes");
+    expect(project.getTracks()[0].effects.size() == 2, "melancholy indie seed adds chord effects");
+    expect(project.getTracks()[3].effects.size() == 2, "melancholy indie seed adds lead effects");
+    expect(aidaw::CommandExecutor::toolManifestJson().contains("create_melancholy_indie_seed"),
+           "tool manifest lists melancholy indie seed command");
+}
+
 void testLLMProviderRequestBuilders()
 {
     aidaw::LLMRequest request;
@@ -478,6 +499,7 @@ int main()
     testTrackProcessingGraphAutomation();
     testOfflineRenderer();
     testCommandExecutor();
+    testMusicalSeedCommand();
     testLLMProviderRequestBuilders();
     testConcreteLLMProviders();
     testAgentCommandService();
