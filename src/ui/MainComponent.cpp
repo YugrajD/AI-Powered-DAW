@@ -328,6 +328,32 @@ MainComponent::MainComponent()
     };
     addAndMakeVisible(executeCommandButton);
 
+    agentProviderSelector.addItem("Mock", 1);
+    agentProviderSelector.addItem("OpenAI Compatible", 2);
+    agentProviderSelector.addItem("Ollama", 3);
+    agentProviderSelector.setSelectedId(1, juce::dontSendNotification);
+    addAndMakeVisible(agentProviderSelector);
+
+    agentEndpointEditor.setText("http://127.0.0.1:11434/api/generate", juce::dontSendNotification);
+    agentEndpointEditor.setTextToShowWhenEmpty("Endpoint", juce::Colour { 0xff7d8794 });
+    agentEndpointEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff121720 });
+    agentEndpointEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
+    agentEndpointEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffdce4f2 });
+    addAndMakeVisible(agentEndpointEditor);
+
+    agentModelEditor.setText("llama3.1", juce::dontSendNotification);
+    agentModelEditor.setTextToShowWhenEmpty("Model", juce::Colour { 0xff7d8794 });
+    agentModelEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff121720 });
+    agentModelEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
+    agentModelEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffdce4f2 });
+    addAndMakeVisible(agentModelEditor);
+
+    agentApiKeyEditor.setTextToShowWhenEmpty("API key", juce::Colour { 0xff7d8794 });
+    agentApiKeyEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff121720 });
+    agentApiKeyEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
+    agentApiKeyEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffdce4f2 });
+    addAndMakeVisible(agentApiKeyEditor);
+
     agentPromptEditor.setMultiLine(true);
     agentPromptEditor.setReturnKeyStartsNewLine(true);
     agentPromptEditor.setText("Add a tight MIDI bass track", juce::dontSendNotification);
@@ -338,11 +364,30 @@ MainComponent::MainComponent()
 
     runAgentButton.onClick = [this]
     {
-        aidaw::MockLLMProvider provider {
-            R"({"type":"create_track","trackType":"midi","name":"AI Bass"})"
-        };
+        aidaw::LLMProviderConfig providerConfig;
+        providerConfig.endpoint = agentEndpointEditor.getText().trim();
+        providerConfig.model = agentModelEditor.getText().trim();
+        providerConfig.apiKey = agentApiKeyEditor.getText().trim();
 
-        const auto result = aidaw::AgentCommandService::run(project, agentPromptEditor.getText(), provider, commandHistory);
+        std::unique_ptr<aidaw::ILLMProvider> provider;
+        if (agentProviderSelector.getSelectedId() == 2)
+        {
+            providerConfig.kind = aidaw::LLMProviderKind::openAICompatible;
+            provider = std::make_unique<aidaw::OpenAICompatibleProvider>(providerConfig, httpTransport);
+        }
+        else if (agentProviderSelector.getSelectedId() == 3)
+        {
+            providerConfig.kind = aidaw::LLMProviderKind::ollama;
+            provider = std::make_unique<aidaw::OllamaProvider>(providerConfig, httpTransport);
+        }
+        else
+        {
+            providerConfig.kind = aidaw::LLMProviderKind::mock;
+            provider = std::make_unique<aidaw::MockLLMProvider>(
+                R"({"type":"create_track","trackType":"midi","name":"AI Bass"})");
+        }
+
+        const auto result = aidaw::AgentCommandService::run(project, agentPromptEditor.getText(), *provider, commandHistory);
         commandEditor.setText(result.llmResponse.commandJson, juce::dontSendNotification);
 
         if (result.ok)
@@ -462,7 +507,16 @@ void MainComponent::resized()
 
     lowerPane.removeFromLeft(16);
     auto agentPane = lowerPane.removeFromLeft(300);
-    agentPromptEditor.setBounds(agentPane.removeFromTop(98));
+    auto providerRow = agentPane.removeFromTop(30);
+    agentProviderSelector.setBounds(providerRow.removeFromLeft(142));
+    providerRow.removeFromLeft(8);
+    agentModelEditor.setBounds(providerRow);
+    agentPane.removeFromTop(8);
+    agentEndpointEditor.setBounds(agentPane.removeFromTop(30));
+    agentPane.removeFromTop(8);
+    agentApiKeyEditor.setBounds(agentPane.removeFromTop(30));
+    agentPane.removeFromTop(8);
+    agentPromptEditor.setBounds(agentPane.removeFromTop(74));
     agentPane.removeFromTop(8);
     runAgentButton.setBounds(agentPane.removeFromTop(30).removeFromLeft(130));
 

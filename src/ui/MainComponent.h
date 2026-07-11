@@ -64,9 +64,14 @@ private:
     std::unique_ptr<juce::FileChooser> exportFileChooser;
     juce::File currentProjectFile;
     aidaw::CommandHistory commandHistory;
+    aidaw::JuceHttpTransport httpTransport;
     juce::TextEditor commandEditor;
     juce::TextButton previewCommandButton { "Preview Command" };
     juce::TextButton executeCommandButton { "Execute Command" };
+    juce::ComboBox agentProviderSelector;
+    juce::TextEditor agentEndpointEditor;
+    juce::TextEditor agentModelEditor;
+    juce::TextEditor agentApiKeyEditor;
     juce::TextEditor agentPromptEditor;
     juce::TextButton runAgentButton { "Run Agent" };
     juce::TextEditor commandHistoryEditor;
