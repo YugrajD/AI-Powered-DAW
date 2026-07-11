@@ -328,6 +328,38 @@ MainComponent::MainComponent()
     };
     addAndMakeVisible(executeCommandButton);
 
+    agentPromptEditor.setMultiLine(true);
+    agentPromptEditor.setReturnKeyStartsNewLine(true);
+    agentPromptEditor.setText("Add a tight MIDI bass track", juce::dontSendNotification);
+    agentPromptEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff121720 });
+    agentPromptEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
+    agentPromptEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffdce4f2 });
+    addAndMakeVisible(agentPromptEditor);
+
+    runAgentButton.onClick = [this]
+    {
+        aidaw::MockLLMProvider provider {
+            R"({"type":"create_track","trackType":"midi","name":"AI Bass"})"
+        };
+
+        const auto result = aidaw::AgentCommandService::run(project, agentPromptEditor.getText(), provider, commandHistory);
+        commandEditor.setText(result.llmResponse.commandJson, juce::dontSendNotification);
+
+        if (result.ok)
+        {
+            log.info("Agent executed: " + result.execution.message);
+            refreshProjectViews();
+        }
+        else
+        {
+            log.error("Agent failed: " + result.execution.message);
+        }
+
+        commandHistoryEditor.setText(commandHistory.toDisplayString(), juce::dontSendNotification);
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(runAgentButton);
+
     commandHistoryEditor.setMultiLine(true);
     commandHistoryEditor.setReadOnly(true);
     commandHistoryEditor.setScrollbarsShown(true);
@@ -350,7 +382,7 @@ MainComponent::MainComponent()
     refreshStatus();
     refreshDeviceControls();
     startTimerHz(20);
-    setSize(1200, 760);
+    setSize(1280, 880);
 }
 
 MainComponent::~MainComponent()
@@ -417,9 +449,9 @@ void MainComponent::resized()
     bounds.removeFromTop(16);
     mixerPanel.setBounds(bounds.removeFromTop(170));
     bounds.removeFromTop(16);
-    auto lowerPane = bounds.removeFromBottom(220);
-    auto commandPane = lowerPane.removeFromLeft(520);
-    commandEditor.setBounds(commandPane.removeFromTop(112));
+    auto lowerPane = bounds.removeFromBottom(240);
+    auto commandPane = lowerPane.removeFromLeft(410);
+    commandEditor.setBounds(commandPane.removeFromTop(98));
     commandPane.removeFromTop(8);
     auto commandButtons = commandPane.removeFromTop(30);
     previewCommandButton.setBounds(commandButtons.removeFromLeft(150));
@@ -427,6 +459,12 @@ void MainComponent::resized()
     executeCommandButton.setBounds(commandButtons.removeFromLeft(150));
     commandPane.removeFromTop(8);
     commandHistoryEditor.setBounds(commandPane);
+
+    lowerPane.removeFromLeft(16);
+    auto agentPane = lowerPane.removeFromLeft(300);
+    agentPromptEditor.setBounds(agentPane.removeFromTop(98));
+    agentPane.removeFromTop(8);
+    runAgentButton.setBounds(agentPane.removeFromTop(30).removeFromLeft(130));
 
     lowerPane.removeFromLeft(16);
     diagnosticsEditor.setBounds(lowerPane);

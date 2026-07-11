@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../ai/AgentCommandService.h"
 #include "../audio/AudioEngine.h"
 #include "../audio/OfflineRenderer.h"
 #include "../commands/CommandExecutor.h"
@@ -66,5 +67,7 @@ private:
     juce::TextEditor commandEditor;
     juce::TextButton previewCommandButton { "Preview Command" };
     juce::TextButton executeCommandButton { "Execute Command" };
+    juce::TextEditor agentPromptEditor;
+    juce::TextButton runAgentButton { "Run Agent" };
     juce::TextEditor commandHistoryEditor;
 };
