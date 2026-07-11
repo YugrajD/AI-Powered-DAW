@@ -446,16 +446,22 @@ void testConcreteLLMProviders()
 void testAgentCommandService()
 {
     aidaw::Project project;
-    aidaw::MockLLMProvider provider { R"({"type":"create_track","trackType":"midi","name":"Agent Bass"})" };
+    aidaw::MockLLMProvider provider {
+        R"({"commands":[{"type":"create_track","trackType":"midi","name":"Agent Bass"},{"type":"create_midi_clip","trackId":"$step1.id","name":"Agent Clip","startBeat":0,"lengthBeats":4},{"type":"add_midi_notes","trackId":"$step1.id","clipId":"$step2.id","notes":[{"pitch":48,"startBeat":0,"lengthBeats":1,"velocity":0.9}]}]})"
+    };
     aidaw::CommandHistory history;
 
     const auto result = aidaw::AgentCommandService::run(project, "add a bass track", provider, history);
-    expect(result.ok, "agent service executes provider command");
+    expect(result.ok, "agent service executes provider command plan");
     expect(result.request.projectSummary.contains("Tracks: 0"), "agent request includes project state before mutation");
     expect(result.request.toolManifestJson.contains("create_track"), "agent request includes tool manifest");
     expect(project.getTracks().size() == 1, "agent command mutates project");
     expect(project.getTracks().front().name == "Agent Bass", "agent command uses provider JSON");
-    expect(history.entries().size() == 1, "agent command records history");
+    expect(project.getTracks().front().clips.size() == 1, "agent command plan creates clip");
+    expect(project.getTracks().front().clips.front().notes.size() == 1, "agent command plan adds notes");
+    expect(result.commandJsons.size() == 3, "agent command plan extracts all commands");
+    expect(result.stepResults.size() == 3, "agent command plan records step results");
+    expect(history.entries().size() == 3, "agent command records plan history");
 }
 }
 

@@ -10,8 +10,10 @@ struct AgentCommandResult
     bool ok = false;
     LLMRequest request;
     LLMResponse llmResponse;
+    std::vector<juce::String> commandJsons;
     CommandResult preview;
     CommandResult execution;
+    std::vector<CommandResult> stepResults;
 };
 
 class AgentCommandService
