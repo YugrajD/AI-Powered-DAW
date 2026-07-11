@@ -1,5 +1,6 @@
 add_executable(AIPoweredDAWTests
     ModelTests.cpp
+    ../src/ai/AgentCommandService.cpp
     ../src/ai/LLMProvider.cpp
     ../src/audio/OfflineRenderer.cpp
     ../src/audio/TrackProcessingGraph.cpp

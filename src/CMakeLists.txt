@@ -8,6 +8,8 @@ target_sources(AIPoweredDAW
     PRIVATE
         ai/LLMProvider.cpp
         ai/LLMProvider.h
+        ai/AgentCommandService.cpp
+        ai/AgentCommandService.h
         audio/AudioEngine.cpp
         audio/AudioEngine.h
         audio/OfflineRenderer.cpp

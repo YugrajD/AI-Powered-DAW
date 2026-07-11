@@ -1,6 +1,7 @@
 #include "core/Project.h"
 #include "core/ProjectFileService.h"
 #include "core/ProjectSerializer.h"
+#include "ai/AgentCommandService.h"
 #include "ai/LLMProvider.h"
 #include "audio/OfflineRenderer.h"
 #include "audio/TrackProcessingGraph.h"
@@ -374,6 +375,21 @@ void testLLMProviderRequestBuilders()
     expect(ollamaJson.contains("\"stream\": false"), "Ollama request disables streaming");
     expect(ollamaJson.contains("Tracks: 1"), "Ollama request includes project summary");
 }
+
+void testAgentCommandService()
+{
+    aidaw::Project project;
+    aidaw::MockLLMProvider provider { R"({"type":"create_track","trackType":"midi","name":"Agent Bass"})" };
+    aidaw::CommandHistory history;
+
+    const auto result = aidaw::AgentCommandService::run(project, "add a bass track", provider, history);
+    expect(result.ok, "agent service executes provider command");
+    expect(result.request.projectSummary.contains("Tracks: 0"), "agent request includes project state before mutation");
+    expect(result.request.toolManifestJson.contains("create_track"), "agent request includes tool manifest");
+    expect(project.getTracks().size() == 1, "agent command mutates project");
+    expect(project.getTracks().front().name == "Agent Bass", "agent command uses provider JSON");
+    expect(history.entries().size() == 1, "agent command records history");
+}
 }
 
 int main()
@@ -390,6 +406,7 @@ int main()
     testOfflineRenderer();
     testCommandExecutor();
     testLLMProviderRequestBuilders();
+    testAgentCommandService();
 
     if (failures != 0)
         return 1;
