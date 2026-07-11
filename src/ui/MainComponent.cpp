@@ -69,6 +69,15 @@ MainComponent::MainComponent()
         refreshDiagnostics();
     };
     addAndMakeVisible(pianoRollView);
+    automationLaneView.setTrack(demoTrackId);
+    automationLaneView.onEdited = [this]
+    {
+        log.info("Added gain automation point");
+        audioEngine.refreshProjectGraph();
+        inspectorPanel.repaint();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(automationLaneView);
     inspectorPanel.setSelection(demoTrackId, demoClipId);
     addAndMakeVisible(inspectorPanel);
     mixerPanel.onMixerChanged = [this]
@@ -268,7 +277,9 @@ void MainComponent::resized()
     workspace.removeFromRight(16);
     arrangementView.setBounds(workspace.removeFromTop(260));
     bounds.removeFromTop(16);
-    pianoRollView.setBounds(workspace.removeFromTop(220));
+    pianoRollView.setBounds(workspace.removeFromTop(170));
+    workspace.removeFromTop(10);
+    automationLaneView.setBounds(workspace.removeFromTop(78));
     bounds.removeFromTop(16);
     mixerPanel.setBounds(bounds.removeFromTop(170));
     bounds.removeFromTop(16);

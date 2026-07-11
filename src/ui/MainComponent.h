@@ -4,6 +4,7 @@
 #include "../core/DiagnosticLog.h"
 #include "../core/Project.h"
 #include "ArrangementView.h"
+#include "AutomationLaneView.h"
 #include "InspectorPanel.h"
 #include "MixerPanel.h"
 #include "PianoRollView.h"
@@ -37,6 +38,7 @@ private:
     juce::Label statusLabel;
     ArrangementView arrangementView { project };
     PianoRollView pianoRollView { project };
+    AutomationLaneView automationLaneView { project };
     InspectorPanel inspectorPanel { project };
     MixerPanel mixerPanel { project };
     TransportBar transportBar { audioEngine };
