@@ -46,3 +46,10 @@ The mixer and automation milestone adds track automation lanes, gain/pan
 automation interpolation, automation-aware audio rendering, a mixer panel
 with per-track gain/pan controls, a clickable gain automation lane, and
 tests for automation playback behavior.
+
+## Stage 7
+
+The project system and export milestone adds `.aidaw` project save/load,
+timestamped backup writes, offline WAV rendering through the track graph,
+Save/Load/Export controls, and tests for project persistence and render
+output.
