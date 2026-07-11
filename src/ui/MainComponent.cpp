@@ -341,7 +341,7 @@ MainComponent::MainComponent()
     agentEndpointEditor.setColour(juce::TextEditor::textColourId, juce::Colour { 0xffdce4f2 });
     addAndMakeVisible(agentEndpointEditor);
 
-    agentModelEditor.setText("llama3.1", juce::dontSendNotification);
+    agentModelEditor.setText("gemma4:e4b", juce::dontSendNotification);
     agentModelEditor.setTextToShowWhenEmpty("Model", juce::Colour { 0xff7d8794 });
     agentModelEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour { 0xff121720 });
     agentModelEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour { 0xff3a4250 });
