@@ -93,6 +93,20 @@ Provider modes:
   endpoint with an optional bearer API key.
 - Ollama: POSTs a local `/api/generate` request to the configured endpoint.
 
-All providers are expected to return exactly one JSON command matching the tool
-manifest from Stage 8. The command is still previewed and validated before it
-mutates the project.
+Providers may return one JSON command matching the tool manifest from Stage 8.
+The command is still previewed and validated before it mutates the project.
+
+## Stage 11
+
+The agent planning milestone lets providers return multi-step command plans
+instead of a single command. `AgentCommandService` accepts either one command,
+an array of commands, or `{ "commands": [...] }`, then validates and executes
+each step in order while recording every step in command history.
+
+Plans can reference IDs created by earlier commands:
+
+- `"$lastId"` resolves to the most recent successful command result ID.
+- `"$step1.id"`, `"$step2.id"`, and so on resolve to specific earlier step IDs.
+
+That allows one prompt to create a track, create a clip on that track, and add
+notes to that clip without the model knowing project IDs in advance.
