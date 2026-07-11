@@ -71,6 +71,13 @@ MainComponent::MainComponent()
     addAndMakeVisible(pianoRollView);
     inspectorPanel.setSelection(demoTrackId, demoClipId);
     addAndMakeVisible(inspectorPanel);
+    mixerPanel.onMixerChanged = [this]
+    {
+        audioEngine.refreshProjectGraph();
+        inspectorPanel.repaint();
+        refreshDiagnostics();
+    };
+    addAndMakeVisible(mixerPanel);
 
     transposeUpButton.onClick = [this]
     {
@@ -184,6 +191,7 @@ MainComponent::MainComponent()
                                                                                8.0);
                                           log.info("Imported audio clip: " + file.getFileName());
                                           audioEngine.refreshProjectGraph();
+                                          mixerPanel.refreshFromProject();
                                           arrangementView.repaint();
                                           inspectorPanel.setSelection(audioTrackId, clip.id);
                                           inspectorPanel.repaint();
@@ -261,6 +269,8 @@ void MainComponent::resized()
     arrangementView.setBounds(workspace.removeFromTop(260));
     bounds.removeFromTop(16);
     pianoRollView.setBounds(workspace.removeFromTop(220));
+    bounds.removeFromTop(16);
+    mixerPanel.setBounds(bounds.removeFromTop(170));
     bounds.removeFromTop(16);
     diagnosticsEditor.setBounds(bounds.removeFromBottom(180));
 }

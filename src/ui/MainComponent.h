@@ -5,6 +5,7 @@
 #include "../core/Project.h"
 #include "ArrangementView.h"
 #include "InspectorPanel.h"
+#include "MixerPanel.h"
 #include "PianoRollView.h"
 #include "TransportBar.h"
 
@@ -37,6 +38,7 @@ private:
     ArrangementView arrangementView { project };
     PianoRollView pianoRollView { project };
     InspectorPanel inspectorPanel { project };
+    MixerPanel mixerPanel { project };
     TransportBar transportBar { audioEngine };
     juce::TextButton transposeUpButton { "+12" };
     juce::TextButton transposeDownButton { "-12" };

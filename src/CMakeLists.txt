@@ -23,6 +23,8 @@ target_sources(AIPoweredDAW
         ui/InspectorPanel.h
         ui/MainComponent.cpp
         ui/MainComponent.h
+        ui/MixerPanel.cpp
+        ui/MixerPanel.h
         ui/PianoRollView.cpp
         ui/PianoRollView.h
         ui/TransportBar.cpp
